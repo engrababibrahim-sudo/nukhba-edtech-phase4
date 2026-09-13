@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@theme { --font-sans: "IBM Plex Sans Arabic", sans-serif; }
+:root { font-family: "IBM Plex Sans Arabic", sans-serif; color: #13233a; background: #f7f6f2; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; }
+button, a, input, select { font: inherit; }
+button { cursor: pointer; }
+button:active, a:active { transform: scale(.98); }
+a { color: inherit; text-decoration: none; }
+::selection { background: #e8a64a; color: #13233a; }
+@media (prefers-reduced-motion: no-preference) { a, button, article, .group { transition: transform .18s cubic-bezier(.23,1,.32,1), box-shadow .18s ease, background-color .18s ease, border-color .18s ease; } }
