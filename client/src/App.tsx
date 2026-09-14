@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useRoute } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -17,39 +17,40 @@ import AdminTeachers from "./pages/AdminTeachers";
 import StudentBookings from "./pages/StudentBookings";
 import TeacherAvailability from "./pages/TeacherAvailability";
 import TeacherBookings from "./pages/TeacherBookings";
+import { AppRole, ProtectedRoute, RoleRedirect } from "./components/AuthRoute";
+
+function Guard({ roles, children }: { roles?: AppRole[]; children: React.ReactNode }) {
+  return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>;
+}
+
+function DashboardRoute() {
+  const [, params] = useRoute("/dashboard/:role");
+  const role = params?.role;
+  const roles: AppRole[] = role === "student" ? ["student"] : role === "parent" ? ["parent"] : role === "teacher" ? ["teacher"] : ["admin", "super_admin", "support"];
+  return <Guard roles={roles}><Dashboard /></Guard>;
+}
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/"><><RoleRedirect /><Home /></></Route>
       <Route path="/teachers" component={Marketplace} />
       <Route path="/teachers/:id" component={Marketplace} />
-
-      <Route path="/dashboard/:role" component={Dashboard} />
+      <Route path="/dashboard/:role" component={DashboardRoute} />
       <Route path="/auth" component={Auth} />
 
-      <Route path="/student/profile" component={StudentProfile} />
-      <Route path="/student/bookings" component={StudentBookings} />
+      <Route path="/student/profile"><Guard roles={["user", "student"]}><StudentProfile /></Guard></Route>
+      <Route path="/student/bookings"><Guard roles={["student"]}><StudentBookings /></Guard></Route>
 
-      <Route path="/parent/children" component={ParentChildren} />
-      <Route
-        path="/parent/children/:studentId"
-        component={ParentChildProfile}
-      />
+      <Route path="/parent/children"><Guard roles={["parent"]}><ParentChildren /></Guard></Route>
+      <Route path="/parent/children/:studentId"><Guard roles={["parent"]}><ParentChildProfile /></Guard></Route>
 
-      <Route path="/teacher/register" component={TeacherRegister} />
-      <Route path="/teacher/dashboard" component={TeacherDashboard} />
-      <Route
-        path="/teacher/availability"
-        component={TeacherAvailability}
-      />
-      <Route
-        path="/teacher/bookings"
-        component={TeacherBookings}
-      />
+      <Route path="/teacher/register"><Guard roles={["user", "student", "teacher"]}><TeacherRegister /></Guard></Route>
+      <Route path="/teacher/dashboard"><Guard roles={["teacher"]}><TeacherDashboard /></Guard></Route>
+      <Route path="/teacher/availability"><Guard roles={["teacher"]}><TeacherAvailability /></Guard></Route>
+      <Route path="/teacher/bookings"><Guard roles={["teacher"]}><TeacherBookings /></Guard></Route>
 
-      <Route path="/admin/teachers" component={AdminTeachers} />
-
+      <Route path="/admin/teachers"><Guard roles={["admin", "super_admin"]}><AdminTeachers /></Guard></Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -57,14 +58,5 @@ function Router() {
 }
 
 export default function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
 }
