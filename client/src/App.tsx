@@ -42,6 +42,8 @@ function Router() {
       <Route path="/dashboard/:role" component={DashboardRoute} />
       <Route path="/auth" component={Auth} />
 
+      <Route path="/onboarding"><Guard roles={["user", "student"]}><Home /></Guard></Route>
+
       <Route path="/student/profile"><Guard roles={["user", "student"]}><StudentProfile /></Guard></Route>
       <Route path="/student/bookings"><Guard roles={["student"]}><StudentBookings /></Guard></Route>
 

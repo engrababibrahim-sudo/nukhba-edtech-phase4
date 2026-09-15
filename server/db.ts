@@ -74,6 +74,10 @@ export async function upsertStudentProfile(userId: number, data: Omit<Partial<ty
   await db.insert(studentProfiles).values({ userId, ...data }).onDuplicateKeyUpdate({ set: { ...data, updatedAt: new Date() } });
   return getStudentProfile(userId);
 }
+export async function provisionStudentUser(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ role: "student", updatedAt: new Date() }).where(and(eq(users.id, userId), eq(users.role, "user")));
+}
 export async function getLearningProfile(studentUserId: number) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(learningProfiles).where(eq(learningProfiles.studentUserId, studentUserId)).limit(1);

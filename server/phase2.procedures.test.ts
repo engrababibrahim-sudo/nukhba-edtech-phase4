@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { appRouter } from "./routers";
+import { provisionStudentUser } from "./db";
 import type { TrpcContext } from "./_core/context";
 
 vi.mock("./db", () => ({
@@ -11,6 +12,7 @@ vi.mock("./db", () => ({
   listActiveChildren: vi.fn(async () => []),
   setRelationshipStatusWithAudit: vi.fn(async () => ({ before: { status: "pending" }, after: { status: "active" } })),
   upsertStudentProfile: vi.fn(async () => undefined),
+  provisionStudentUser: vi.fn(async () => undefined),
   upsertLearningProfile: vi.fn(async () => undefined),
 }));
 
@@ -26,6 +28,13 @@ describe("Phase 2 tRPC procedure authorization", () => {
     await expect(caller.student.profile.update({ userId: 2, fullName: "tamper" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.student.learningProfile.get({ studentUserId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.student.learningProfile.save({ studentUserId: 2, goal: "tamper" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("provisions the authenticated default user as a student after saving their profile", async () => {
+    vi.mocked(provisionStudentUser).mockClear();
+    const caller = appRouter.createCaller(context({ id: 1, role: "user" }));
+    await caller.student.profile.update({ fullName: "طالب نُخبة" });
+    expect(provisionStudentUser).toHaveBeenCalledWith(1);
   });
 
   it("blocks non-parents and invalid students from creating links", async () => {

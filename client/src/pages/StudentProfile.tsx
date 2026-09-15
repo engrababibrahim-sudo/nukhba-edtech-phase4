@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
 const fieldLabels: Record<string, string> = { fullName: "الاسم الكامل", educationStage: "المرحلة الدراسية", grade: "الصف", learningLevel: "المستوى", learningGoals: "أهداف التعلم", strengths: "نقاط القوة", difficulties: "الصعوبات", preferredLearningFormat: "صيغة التعلم المفضلة", preferredSubjects: "المواد المفضلة", preferredAvailability: "الأوقات المناسبة" };
 const profileFields = ["fullName", "educationStage", "grade", "learningLevel", "learningGoals", "strengths", "difficulties", "preferredLearningFormat", "preferredSubjects", "preferredAvailability"] as const;
 
 export default function StudentProfile() {
+  const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
   const profile = trpc.student.profile.get.useQuery();
-  const update = trpc.student.profile.update.useMutation({ onSuccess: () => profile.refetch() });
+  const update = trpc.student.profile.update.useMutation({ onSuccess: async () => { await profile.refetch(); await utils.auth.me.invalidate(); const learningProfile = await utils.student.learningProfile.get.fetch(); window.setTimeout(() => navigate(learningProfile ? "/dashboard/student" : "/onboarding"), 700); } });
   const learning = trpc.student.learningProfile.get.useQuery();
   const [form, setForm] = useState<Record<string, string>>({});
   useEffect(() => { if (profile.data) { const next: Record<string, string> = {}; for (const key of profileFields) next[key] = Array.isArray(profile.data[key]) ? (profile.data[key] as string[]).join("، ") : String(profile.data[key] ?? ""); setForm(next); } }, [profile.data]);

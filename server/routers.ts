@@ -24,6 +24,7 @@ import {
   setRelationshipStatusWithAudit,
   upsertLearningProfile,
   upsertStudentProfile,
+  provisionStudentUser,
   updateUserAccessWithAudit,
 } from "./db";
 import {
@@ -161,10 +162,14 @@ export const appRouter = router({
             userId: z.number().int().positive().optional(),
           }),
         )
-        .mutation(({ ctx, input }) => {
+        .mutation(async ({ ctx, input }) => {
           const { userId = ctx.user.id, ...data } = input;
           assertSelfOrAdmin(ctx.user, userId);
-          return upsertStudentProfile(userId, data);
+          const profile = await upsertStudentProfile(userId, data);
+          if (userId === ctx.user.id && ctx.user.role === "user") {
+            await provisionStudentUser(ctx.user.id);
+          }
+          return profile;
         }),
     }),
 

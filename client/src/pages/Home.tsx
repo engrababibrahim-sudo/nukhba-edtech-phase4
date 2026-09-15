@@ -29,6 +29,7 @@ export default function Home() {
   const update = (key: keyof Onboarding, value: string) => setOnboarding(v => ({ ...v, [key]: value }));
   const notify = (text: string) => { setNotice(text); window.setTimeout(() => setNotice(""), 2600); };
   const openOnboarding = () => { setStep(0); setOnboardingOpen(true); };
+  useEffect(() => { if (window.location.pathname === "/onboarding") openOnboarding(); }, []);
   const questions = [
     ["من أنت؟", "role", ["طالب", "ولي أمر"]], ["ما المرحلة الدراسية؟", "stage", ["ابتدائي", "متوسط", "ثانوي", "جامعي"]], ["ما الصف؟", "grade", ["سادس", "أول متوسط", "ثاني ثانوي", "ثالث ثانوي"]], ["ما المادة؟", "subject", ["رياضيات", "فيزياء", "لغة إنجليزية", "كيمياء"]], ["ما هدفك من التعلم؟", "goal", ["رفع الدرجة", "الاستعداد لاختبار", "فهم الأساسيات", "تطوير مهارة"]], ["كيف تصف مستواك؟", "level", ["مبتدئ", "متوسط", "متقدم"]], ["ما أكثر ما تحتاجه؟", "needs", ["حل مسائل", "تنظيم المذاكرة", "شرح المفاهيم", "ثقة قبل الاختبار"]], ["ما نوع الدروس المفضل؟", "format", ["فردية مباشرة", "مرنة حسب الجدول", "مزيج من الاثنين"]], ["متى يناسبك التعلم؟", "time", ["بعد الظهر", "المساء", "نهاية الأسبوع"]],
   ] as const;
