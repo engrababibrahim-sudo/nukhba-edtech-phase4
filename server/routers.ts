@@ -18,6 +18,7 @@ import {
   getLearningProfile,
   getParentProfile,
   getStudentProfile,
+  listStudentsForAdmin,
   getUserById,
   listActiveChildren,
   setRelationshipStatusWithAudit,
@@ -689,6 +690,14 @@ export const appRouter = router({
   }),
 
   admin: router({
+    overview: privilegedProcedure.query(async () => {
+      const students = await listStudentsForAdmin();
+      const teachers = await listTeacherApplications();
+      return { studentCount: students.length, teacherCount: teachers.length };
+    }),
+    students: router({
+      list: privilegedProcedure.query(() => listStudentsForAdmin()),
+    }),
     teachers: router({
       list: privilegedProcedure.query(() =>
         listTeacherApplications(),

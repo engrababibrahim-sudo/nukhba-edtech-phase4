@@ -14,6 +14,9 @@ import ParentChildProfile from "./pages/ParentChildProfile";
 import TeacherRegister from "./pages/TeacherRegister";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import AdminTeachers from "./pages/AdminTeachers";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminStudents from "./pages/AdminStudents";
+import AdminPlaceholder from "./pages/AdminPlaceholder";
 import StudentBookings from "./pages/StudentBookings";
 import TeacherAvailability from "./pages/TeacherAvailability";
 import TeacherBookings from "./pages/TeacherBookings";
@@ -50,7 +53,11 @@ function Router() {
       <Route path="/teacher/availability"><Guard roles={["teacher"]}><TeacherAvailability /></Guard></Route>
       <Route path="/teacher/bookings"><Guard roles={["teacher"]}><TeacherBookings /></Guard></Route>
 
+      <Route path="/admin"><Guard roles={["admin", "super_admin"]}><AdminDashboard /></Guard></Route>
+      <Route path="/admin/students"><Guard roles={["admin", "super_admin"]}><AdminStudents /></Guard></Route>
       <Route path="/admin/teachers"><Guard roles={["admin", "super_admin"]}><AdminTeachers /></Guard></Route>
+      <Route path="/admin/parents"><Guard roles={["admin", "super_admin"]}><AdminPlaceholder title="أولياء الأمور" /></Guard></Route>
+      <Route path="/admin/bookings"><Guard roles={["admin", "super_admin"]}><AdminPlaceholder title="الحجوزات" /></Guard></Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

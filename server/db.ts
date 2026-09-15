@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   auditLogs,
@@ -53,6 +53,16 @@ export async function getStudentProfile(userId: number) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).limit(1);
   return result[0];
+}
+export async function listStudentsForAdmin() {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ user: users, profile: studentProfiles, learning: learningProfiles })
+    .from(users)
+    .leftJoin(studentProfiles, eq(studentProfiles.userId, users.id))
+    .leftJoin(learningProfiles, eq(learningProfiles.studentUserId, users.id))
+    .where(eq(users.role, "student"))
+    .orderBy(desc(users.createdAt))
+    .limit(500);
 }
 export async function getParentProfile(userId: number) {
   const db = await getDb(); if (!db) return undefined;
