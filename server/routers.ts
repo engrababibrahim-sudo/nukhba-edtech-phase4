@@ -21,7 +21,10 @@ import {
   listStudentsForAdmin,
   getUserById,
   listActiveChildren,
+  listStudentFavorites,
   setRelationshipStatusWithAudit,
+  addStudentFavorite,
+  removeStudentFavorite,
   upsertLearningProfile,
   upsertStudentProfile,
   provisionStudentUser,
@@ -141,6 +144,21 @@ export const appRouter = router({
   }),
 
   student: router({
+    favorites: router({
+      list: protectedProcedure.query(async ({ ctx }) => {
+        if (ctx.user.role !== "student") throw new TRPCError({ code: "FORBIDDEN", message: "المفضلة متاحة للطلاب فقط" });
+        return listStudentFavorites(ctx.user.id);
+      }),
+      add: protectedProcedure.input(z.object({ favoriteType: z.enum(["teacher", "course"]), targetId: z.string().trim().min(1).max(128), title: z.string().trim().min(1).max(255) })).mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "student") throw new TRPCError({ code: "FORBIDDEN", message: "المفضلة متاحة للطلاب فقط" });
+        return addStudentFavorite(ctx.user.id, input.favoriteType, input.targetId, input.title);
+      }),
+      remove: protectedProcedure.input(z.object({ favoriteType: z.enum(["teacher", "course"]), targetId: z.string().trim().min(1).max(128) })).mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "student") throw new TRPCError({ code: "FORBIDDEN", message: "المفضلة متاحة للطلاب فقط" });
+        await removeStudentFavorite(ctx.user.id, input.favoriteType, input.targetId);
+        return { success: true } as const;
+      }),
+    }),
     profile: router({
       get: protectedProcedure
         .input(
@@ -155,6 +173,12 @@ export const appRouter = router({
           assertSelfOrAdmin(ctx.user, userId);
           return getStudentProfile(userId);
         }),
+
+      exportData: protectedProcedure.query(async ({ ctx }) => {
+        if (ctx.user.role !== "student") throw new TRPCError({ code: "FORBIDDEN", message: "تصدير الملف متاح للطلاب فقط" });
+        const [user, profile, learning, bookings] = await Promise.all([getUserById(ctx.user.id), getStudentProfile(ctx.user.id), getLearningProfile(ctx.user.id), listStudentBookings(ctx.user.id)]);
+        return { user, profile, learning, bookings };
+      }),
 
       update: protectedProcedure
         .input(

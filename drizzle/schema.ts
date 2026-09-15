@@ -68,6 +68,18 @@ export const learningProfiles = mysqlTable("learning_profiles", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const studentFavorites = mysqlTable("student_favorites", {
+  id: int("id").autoincrement().primaryKey(),
+  studentUserId: int("studentUserId").notNull().references(() => users.id),
+  favoriteType: mysqlEnum("favoriteType", ["teacher", "course"]).notNull(),
+  targetId: varchar("targetId", { length: 128 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => ({
+  studentFavoriteUnique: uniqueIndex("student_favorite_unique").on(table.studentUserId, table.favoriteType, table.targetId),
+  studentFavoriteLookup: index("student_favorite_lookup").on(table.studentUserId, table.favoriteType),
+}));
+
 export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
   actorUserId: int("actorUserId").notNull().references(() => users.id),
@@ -176,6 +188,7 @@ export type StudentProfile = typeof studentProfiles.$inferSelect;
 export type ParentProfile = typeof parentProfiles.$inferSelect;
 export type ParentStudentRelationship = typeof parentStudentRelationships.$inferSelect;
 export type LearningProfile = typeof learningProfiles.$inferSelect;
+export type StudentFavorite = typeof studentFavorites.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type TeacherProfile = typeof teacherProfiles.$inferSelect;
 

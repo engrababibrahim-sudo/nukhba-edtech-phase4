@@ -18,6 +18,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminStudents from "./pages/AdminStudents";
 import AdminPlaceholder from "./pages/AdminPlaceholder";
 import StudentBookings from "./pages/StudentBookings";
+import Favorites from "./pages/Favorites";
 import TeacherAvailability from "./pages/TeacherAvailability";
 import TeacherBookings from "./pages/TeacherBookings";
 import { AppRole, ProtectedRoute, RoleRedirect } from "./components/AuthRoute";
@@ -46,6 +47,7 @@ function Router() {
 
       <Route path="/student/profile"><Guard roles={["user", "student"]}><StudentProfile /></Guard></Route>
       <Route path="/student/bookings"><Guard roles={["student"]}><StudentBookings /></Guard></Route>
+      <Route path="/student/favorites"><Guard roles={["student"]}><Favorites /></Guard></Route>
 
       <Route path="/parent/children"><Guard roles={["parent"]}><ParentChildren /></Guard></Route>
       <Route path="/parent/children/:studentId"><Guard roles={["parent"]}><ParentChildProfile /></Guard></Route>

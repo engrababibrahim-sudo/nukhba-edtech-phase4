@@ -6,6 +6,7 @@ import {
   learningProfiles,
   parentProfiles,
   parentStudentRelationships,
+  studentFavorites,
   studentProfiles,
   teacherProfiles,
   users,
@@ -87,6 +88,22 @@ export async function upsertLearningProfile(studentUserId: number, data: Omit<Pa
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   await db.insert(learningProfiles).values({ studentUserId, ...data }).onDuplicateKeyUpdate({ set: { ...data, updatedAt: new Date() } });
   return getLearningProfile(studentUserId);
+}
+
+export async function listStudentFavorites(studentUserId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(studentFavorites).where(eq(studentFavorites.studentUserId, studentUserId)).orderBy(desc(studentFavorites.createdAt));
+}
+
+export async function addStudentFavorite(studentUserId: number, favoriteType: "teacher" | "course", targetId: string, title: string) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.insert(studentFavorites).values({ studentUserId, favoriteType, targetId, title }).onDuplicateKeyUpdate({ set: { title } });
+  return db.select().from(studentFavorites).where(and(eq(studentFavorites.studentUserId, studentUserId), eq(studentFavorites.favoriteType, favoriteType), eq(studentFavorites.targetId, targetId))).limit(1);
+}
+
+export async function removeStudentFavorite(studentUserId: number, favoriteType: "teacher" | "course", targetId: string) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  await db.delete(studentFavorites).where(and(eq(studentFavorites.studentUserId, studentUserId), eq(studentFavorites.favoriteType, favoriteType), eq(studentFavorites.targetId, targetId)));
 }
 export async function listActiveChildren(parentUserId: number) {
   const db = await getDb(); if (!db) return [];

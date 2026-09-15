@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export const demoTeachers = [
   {
@@ -125,6 +126,11 @@ export default function Marketplace() {
   const [, setLocation] = useLocation();
 
   const live = trpc.marketplace.teachers.useQuery();
+  const { user } = useAuth();
+  const favorites = trpc.student.favorites.list.useQuery(undefined, { enabled: user?.role === "student" });
+  const utils = trpc.useUtils();
+  const addFavorite = trpc.student.favorites.add.useMutation({ onSuccess: () => utils.student.favorites.list.invalidate() });
+  const removeFavorite = trpc.student.favorites.remove.useMutation({ onSuccess: () => utils.student.favorites.list.invalidate() });
 
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("كل المواد");
@@ -158,6 +164,12 @@ export default function Marketplace() {
   const selected = params?.id
     ? allTeachers.find((t) => t.id === params.id)
     : null;
+  const favoriteIds = new Set((favorites.data ?? []).filter((item) => item.favoriteType === "teacher").map((item) => item.targetId));
+  const toggleTeacherFavorite = (teacher: typeof demoTeachers[number]) => {
+    if (user?.role !== "student" || !/^\d+$/.test(teacher.id)) return;
+    if (favoriteIds.has(teacher.id)) removeFavorite.mutate({ favoriteType: "teacher", targetId: teacher.id });
+    else addFavorite.mutate({ favoriteType: "teacher", targetId: teacher.id, title: teacher.name });
+  };
 
   const filtered = useMemo(
     () =>
@@ -244,6 +256,7 @@ export default function Marketplace() {
                     للساعة
                   </span>
                 </div>
+                <button type="button" onClick={() => selected && toggleTeacherFavorite(selected)} disabled={user?.role !== "student" || !selected || !/^\d+$/.test(selected.id)} className={`rounded-full border px-4 py-3 text-xs font-bold ${selected && favoriteIds.has(selected.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#13233a]/12"}`}>{selected && favoriteIds.has(selected.id) ? "إزالة من المفضلة" : "حفظ في المفضلة"}</button>
               </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -437,7 +450,8 @@ export default function Marketplace() {
                       </small>
                     </span>
 
-                    <div className="flex gap-2">
+                <div className="flex gap-2">
+                      <button type="button" onClick={() => toggleTeacherFavorite(t)} disabled={user?.role !== "student" || !/^\d+$/.test(t.id)} className={`rounded-full border px-3 py-2 text-xs font-bold ${favoriteIds.has(t.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#13233a]/12"}`}>{favoriteIds.has(t.id) ? "محفوظ" : "مفضلة"}</button>
                       <Link
                         href={`/teachers/${t.id}`}
                         className="rounded-full border border-[#13233a]/12 px-3 py-2 text-xs font-bold"
