@@ -53,12 +53,25 @@ class OAuthService {
       redirectUri: this.decodeState(state),
     };
 
-    const { data } = await this.client.post<ExchangeTokenResponse>(
+    const { data } = await this.client.post<ExchangeTokenResponse & Record<string, unknown>>(
       EXCHANGE_TOKEN_PATH,
       payload
     );
 
-    return data;
+    // The production auth gateway may serialize protobuf fields as snake_case,
+    // while local/preview responses use the generated camelCase names.
+    const accessToken = data.accessToken ?? data.access_token;
+    if (typeof accessToken !== "string" || accessToken.length === 0) {
+      throw new Error("OAuth token response did not include an access token");
+    }
+    return {
+      ...data,
+      accessToken,
+      tokenType: String(data.tokenType ?? data.token_type ?? "Bearer"),
+      expiresIn: Number(data.expiresIn ?? data.expires_in ?? 0),
+      scope: String(data.scope ?? ""),
+      idToken: String(data.idToken ?? data.id_token ?? ""),
+    } as ExchangeTokenResponse;
   }
 
   async getUserInfoByToken(
@@ -133,12 +146,17 @@ class SDKServer {
     const data = await this.oauthService.getUserInfoByToken({
       accessToken,
     } as ExchangeTokenResponse);
+    const raw = data as GetUserInfoResponse & Record<string, unknown>;
     const loginMethod = this.deriveLoginMethod(
-      (data as any)?.platforms,
-      (data as any)?.platform ?? data.platform ?? null
+      raw.platforms,
+      (raw.platform ?? raw.login_method ?? raw.loginMethod) as string | null | undefined
     );
     return {
-      ...(data as any),
+      ...raw,
+      openId: String(raw.openId ?? raw.open_id ?? ""),
+      projectId: String(raw.projectId ?? raw.project_id ?? ENV.appId),
+      name: String(raw.name ?? ""),
+      email: (raw.email ?? null) as string | null,
       platform: loginMethod,
       loginMethod,
     } as GetUserInfoResponse;
