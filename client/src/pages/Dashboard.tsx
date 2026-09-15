@@ -15,15 +15,23 @@ export default function Dashboard() {
   const [toast, setToast] = useState("");
   const notify = (text: string) => { setToast(text); window.setTimeout(() => setToast(""), 2600); };
   const displayName = user?.name || c.title;
-  const learning = trpc.student.learningProfile.get.useQuery(undefined, { enabled: role === "student" });
-  const bookings = trpc.student.booking.list.useQuery(undefined, { enabled: role === "student" });
-  const favorites = trpc.student.favorites.list.useQuery(undefined, { enabled: role === "student" });
+  // Do not start student queries from the URL fallback before auth.me has resolved.
+  // A transient unauthenticated/other-role request can otherwise leave a stale
+  // React Query error cached after the protected route has admitted the student.
+  const studentQueriesEnabled = user?.role === "student";
+  const learning = trpc.student.learningProfile.get.useQuery(undefined, { enabled: studentQueriesEnabled });
+  const bookings = trpc.student.booking.list.useQuery(undefined, { enabled: studentQueriesEnabled });
+  const favorites = trpc.student.favorites.list.useQuery(undefined, { enabled: studentQueriesEnabled });
   const utils = trpc.useUtils();
   const favoriteMutation = trpc.student.favorites.add.useMutation({ onSuccess: () => utils.student.favorites.list.invalidate() });
   const removeFavorite = trpc.student.favorites.remove.useMutation({ onSuccess: () => utils.student.favorites.list.invalidate() });
-  const studentLoading = role === "student" && (learning.isLoading || bookings.isLoading || favorites.isLoading);
-  const studentError = role === "student" && (learning.isError || bookings.isError || favorites.isError);
+  const studentLoading = studentQueriesEnabled && (learning.isLoading || bookings.isLoading || favorites.isLoading);
+  const studentError = studentQueriesEnabled && !studentLoading && hasStudentDashboardError(learning.isError, bookings.isError, favorites.isError);
   return <div dir="rtl" className="min-h-screen bg-[#f7f6f2] text-[#13233a]">{toast && <div role="status" className="fixed bottom-5 right-5 z-50 rounded-full bg-[#13233a] px-5 py-3 text-sm text-white shadow-xl">{toast}</div>}<aside className="fixed inset-y-0 right-0 hidden w-64 border-l border-[#13233a]/10 bg-white p-5 lg:block"><Link href="/" className="flex items-center gap-3 px-2"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#13233a] font-bold text-[#e8a64a]">ن</span><b className="text-xl">نُخبة</b></Link><nav className="mt-12 space-y-2 text-sm font-semibold"><Nav text="نظرة عامة" active/><Nav text="التقويم والحجوزات"/><Nav text="المواد والخطة"/><Link href="/student/favorites" className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-right text-[#13233a]/60 hover:bg-[#f7f6f2]">المفضلة</Link><Nav text="التقارير"/></nav><div className="absolute bottom-6 right-5 left-5 rounded-2xl bg-[#f7f6f2] p-4"><p className="text-xs text-[#13233a]/45">الحساب الحالي</p><p className="mt-2 font-bold">{displayName}</p><button onClick={() => void logout()} className="mt-4 flex items-center gap-2 text-xs text-[#13233a]/55"><LogOut className="h-4 w-4"/>تسجيل الخروج</button></div></aside><main className="lg:mr-64"><header className="flex items-center justify-between border-b border-[#13233a]/10 bg-[#f7f6f2] px-5 py-5 lg:px-10"><div><div className="flex items-center gap-2 text-sm text-[#13233a]/45"><Link href="/">نُخبة</Link><ChevronLeft className="h-4 w-4"/>لوحتي</div><h1 className="mt-3 text-2xl font-bold">{c.title}</h1><p className="mt-1 text-sm text-[#13233a]/55">{c.subtitle}</p></div><div className="flex items-center gap-3"><button onClick={() => notify("لا توجد إشعارات جديدة")} className="rounded-full bg-white p-3"><Bell className="h-5 w-5"/></button><div className="grid h-11 w-11 place-items-center rounded-full bg-[#e8a64a] font-bold">{(user?.name || c.initial)[0]}</div></div></header><div className="p-5 lg:p-10"><div className="mb-6 rounded-2xl border border-[#0e7c78]/15 bg-[#e9f5ef] px-5 py-4 text-sm text-[#0e7c78]"><ShieldCheck className="ml-2 inline h-4 w-4"/>هذه اللوحة مرتبطة بدور حسابك: {user?.role}.</div>{role === "admin" ? <Admin/> : role === "teacher" ? <Teacher saved={reportSaved} onSave={() => { setReportSaved(true); notify("تم حفظ التقرير"); }}/> : role === "parent" ? <Parent/> : <Student notify={notify} loading={studentLoading} error={studentError} learning={learning.data} bookings={bookings.data ?? []} favorites={favorites.data ?? []} onFavorite={(targetId, title, favoriteType) => favoriteMutation.mutate({ targetId, title, favoriteType })} onRemoveFavorite={(targetId, favoriteType) => removeFavorite.mutate({ targetId, favoriteType })}/>}</div></main></div>
+}
+
+export function hasStudentDashboardError(learningError: boolean, bookingsError: boolean, favoritesError: boolean) {
+  return learningError || bookingsError || favoritesError;
 }
 
 function Nav({text, active}: {text: string; active?: boolean}) { return <button className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-right ${active ? "bg-[#13233a] text-white" : "text-[#13233a]/60 hover:bg-[#f7f6f2]"}`}><LayoutDashboard className="h-4 w-4"/>{text}<ChevronLeft className="mr-auto h-4 w-4 opacity-30"/></button> }
