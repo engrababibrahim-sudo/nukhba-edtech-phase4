@@ -11,6 +11,9 @@ describe("student dashboard loading states", () => {
     expect(source).toContain("تعذر تحميل بيانات لوحة الطالب");
     expect(source).toContain("learning.isLoading");
     expect(source).toContain("bookings.isLoading");
+    expect(source).toContain("تصدير CSV");
+    expect(source).toContain("تصدير Excel");
+    expect(source).toContain("exportState");
   });
 
   it("does not treat valid empty student data as a dashboard error", () => {

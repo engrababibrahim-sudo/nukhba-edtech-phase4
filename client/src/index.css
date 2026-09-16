@@ -11,3 +11,12 @@ button:active, a:active { transform: scale(.98); }
 a { color: inherit; text-decoration: none; }
 ::selection { background: #e8a64a; color: #13233a; }
 @media (prefers-reduced-motion: no-preference) { a, button, article, .group { transition: transform .18s cubic-bezier(.23,1,.32,1), box-shadow .18s ease, background-color .18s ease, border-color .18s ease; } }
+.dark { color-scheme: dark; }
+.dark body { background: #0f172a; color: #e5e7eb; }
+.dark input, .dark textarea, .dark select { color: #f8fafc; }
+.dark [class*="bg-white"] { background-color: #1e293b !important; color: #e5e7eb; }
+.dark [class*="bg-[#f7f6f2]"] { background-color: #0f172a !important; }
+.dark [class*="bg-[#e9f1ed]"] { background-color: #15333a !important; }
+.dark [class*="text-[#13233a]"] { color: #e5e7eb !important; }
+.dark [class*="border-[#13233a]"] { border-color: rgb(226 232 240 / 0.18) !important; }
+.dark [class*="text-[#13233a]/"] { color: rgb(226 232 240 / 0.68) !important; }
