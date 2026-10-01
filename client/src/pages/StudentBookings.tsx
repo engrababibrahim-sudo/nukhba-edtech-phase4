@@ -53,12 +53,12 @@ export default function StudentBookings() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#f7f6f2] text-[#13233a]"
+      className="min-h-screen bg-[#fbf8f4] text-[#182431]"
     >
-      <header className="border-b border-[#13233a]/10 bg-white">
+      <header className="border-b border-[#182431]/10 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
           <div>
-            <p className="text-sm font-bold text-[#0e7c78]">
+            <p className="text-sm font-bold text-[#ff7a00]">
               نُخبة
             </p>
             <h1 className="mt-1 text-2xl font-bold">
@@ -68,7 +68,7 @@ export default function StudentBookings() {
 
           <Link
             href="/teachers"
-            className="rounded-full bg-[#13233a] px-5 py-3 text-sm font-bold text-white"
+            className="rounded-full bg-[#182431] px-5 py-3 text-sm font-bold text-white"
           >
             البحث عن معلم
           </Link>
@@ -90,7 +90,7 @@ export default function StudentBookings() {
 
             <button
               onClick={() => bookings.refetch()}
-              className="mt-5 rounded-full bg-[#0e7c78] px-5 py-3 font-bold text-white"
+              className="mt-5 rounded-full bg-[#ff7a00] px-5 py-3 font-bold text-white"
             >
               إعادة المحاولة
             </button>
@@ -101,19 +101,19 @@ export default function StudentBookings() {
           !bookings.isError &&
           rows.length === 0 && (
             <div className="rounded-3xl bg-white p-12 text-center">
-              <CalendarDays className="mx-auto h-12 w-12 text-[#0e7c78]" />
+              <CalendarDays className="mx-auto h-12 w-12 text-[#ff7a00]" />
 
               <h2 className="mt-5 text-xl font-bold">
                 لا توجد حجوزات حتى الآن
               </h2>
 
-              <p className="mt-2 text-sm text-[#13233a]/55">
+              <p className="mt-2 text-sm text-[#182431]/55">
                 ابدئي باختيار المعلم المناسب واحجزي موعد الدرس.
               </p>
 
               <Link
                 href="/teachers"
-                className="mt-6 inline-flex rounded-full bg-[#0e7c78] px-6 py-3 font-bold text-white"
+                className="mt-6 inline-flex rounded-full bg-[#ff7a00] px-6 py-3 font-bold text-white"
               >
                 استعرض المعلمين
               </Link>
@@ -137,14 +137,14 @@ export default function StudentBookings() {
                     <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <UserRound className="h-5 w-5 text-[#0e7c78]" />
+                          <UserRound className="h-5 w-5 text-[#ff7a00]" />
 
                           <h2 className="text-xl font-bold">
                             {teacher.fullName}
                           </h2>
                         </div>
 
-                        <div className="mt-4 space-y-3 text-sm text-[#13233a]/65">
+                        <div className="mt-4 space-y-3 text-sm text-[#182431]/65">
                           <div className="flex items-center gap-2">
                             <CalendarDays className="h-4 w-4" />
                             <span>
@@ -165,7 +165,7 @@ export default function StudentBookings() {
                           </div>
 
                           {booking.notes && (
-                            <p className="rounded-2xl bg-[#f7f6f2] p-3 leading-6">
+                            <p className="rounded-2xl bg-[#fbf8f4] p-3 leading-6">
                               {booking.notes}
                             </p>
                           )}
@@ -176,7 +176,7 @@ export default function StudentBookings() {
                         <span
                           className={`rounded-full px-4 py-2 text-xs font-bold ${
                             booking.status === "confirmed"
-                              ? "bg-[#e9f5ef] text-[#0e7c78]"
+                              ? "bg-[#fff0e2] text-[#ff7a00]"
                               : booking.status === "pending"
                                 ? "bg-[#fff4df] text-[#8a5a00]"
                                 : booking.status === "completed"

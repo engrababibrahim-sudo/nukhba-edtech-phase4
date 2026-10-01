@@ -4,7 +4,6 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useRoute } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import ThemeToggle from "./components/ThemeToggle";
 import Home from "./pages/Home";
 import Marketplace from "./pages/Marketplace";
 import Dashboard from "./pages/Dashboard";
@@ -22,7 +21,7 @@ import StudentBookings from "./pages/StudentBookings";
 import Favorites from "./pages/Favorites";
 import TeacherAvailability from "./pages/TeacherAvailability";
 import TeacherBookings from "./pages/TeacherBookings";
-import { AppRole, ProtectedRoute, RoleRedirect } from "./components/AuthRoute";
+import { AppRole, ProtectedRoute } from "./components/AuthRoute";
 
 function Guard({ roles, children }: { roles?: AppRole[]; children: React.ReactNode }) {
   return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>;
@@ -38,7 +37,7 @@ function DashboardRoute() {
 function Router() {
   return (
     <Switch>
-      <Route path="/"><><RoleRedirect /><Home /></></Route>
+      <Route path="/" component={Home} />
       <Route path="/teachers" component={Marketplace} />
       <Route path="/teachers/:id" component={Marketplace} />
       <Route path="/dashboard/:role" component={DashboardRoute} />
@@ -70,5 +69,5 @@ function Router() {
 }
 
 export default function App() {
-  return <ErrorBoundary><ThemeProvider defaultTheme="light" switchable><TooltipProvider><Toaster /><div className="fixed left-4 top-4 z-[70]"><ThemeToggle /></div><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
 }

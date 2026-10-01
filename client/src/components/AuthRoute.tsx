@@ -20,12 +20,12 @@ export function getRoleHome(role?: string | null) {
 }
 
 function LoadingScreen({ message = "جارٍ التحقق من الجلسة…" }: { message?: string }) {
-  return <div dir="rtl" className="grid min-h-screen place-items-center bg-[#f7f6f2] p-6 text-[#13233a]"><div className="rounded-3xl bg-white px-8 py-7 text-center shadow-sm"><div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#0e7c78]/20 border-t-[#0e7c78]" /><p className="mt-4 text-sm font-semibold">{message}</p></div></div>;
+  return <div dir="rtl" className="grid min-h-screen place-items-center bg-[#fbf8f4] p-6 text-[#182431]"><div className="rounded-3xl bg-white px-8 py-7 text-center shadow-sm"><div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#ff7a00]/20 border-t-[#ff7a00]" /><p className="mt-4 text-sm font-semibold">{message}</p></div></div>;
 }
 
 function AccessDenied({ actualRole, requiredRoles }: { actualRole: string; requiredRoles: AppRole[] }) {
   const [, navigate] = useLocation();
-  return <div dir="rtl" className="grid min-h-screen place-items-center bg-[#f7f6f2] p-6 text-[#13233a]"><div className="max-w-md rounded-3xl bg-white p-8 text-center shadow-sm"><h1 className="text-2xl font-bold">لا يمكن الوصول إلى هذه الصفحة</h1><p className="mt-3 text-sm leading-7 text-[#13233a]/60">هذا القسم مخصص لدور مختلف. سيتم إعادتك إلى مساحتك المناسبة.</p><button onClick={() => navigate(getRoleHome(actualRole))} className="mt-6 rounded-full bg-[#0e7c78] px-6 py-3 text-sm font-bold text-white">العودة إلى مساحتي</button><p className="mt-4 text-xs text-[#13233a]/40">الدور المطلوب: {requiredRoles.join("، ")}</p></div></div>;
+  return <div dir="rtl" className="grid min-h-screen place-items-center bg-[#fbf8f4] p-6 text-[#182431]"><div className="max-w-md rounded-3xl bg-white p-8 text-center shadow-sm"><h1 className="text-2xl font-bold">لا يمكن الوصول إلى هذه الصفحة</h1><p className="mt-3 text-sm leading-7 text-[#182431]/60">هذا القسم مخصص لدور مختلف. سيتم إعادتك إلى مساحتك المناسبة.</p><button onClick={() => navigate(getRoleHome(actualRole))} className="mt-6 rounded-full bg-[#ff7a00] px-6 py-3 text-sm font-bold text-white">العودة إلى مساحتي</button><p className="mt-4 text-xs text-[#182431]/40">الدور المطلوب: {requiredRoles.join("، ")}</p></div></div>;
 }
 
 export function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: AppRole[] }) {

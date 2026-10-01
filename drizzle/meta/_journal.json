@@ -50,6 +50,13 @@
       "when": 1789465581992,
       "tag": "0005_clever_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1790857460055,
+      "tag": "0007_soft_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

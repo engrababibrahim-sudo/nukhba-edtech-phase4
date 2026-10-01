@@ -14,19 +14,21 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { currencyForCountry, marketplaceCountryKey } from "../../../shared/marketplace";
 
 export const demoTeachers = [
   {
     id: "sara",
-    name: "سارة العتيبي",
+    name: "سارة محمود",
+    country: "مصر",
     subject: "رياضيات",
     stage: "ثانوي",
-    grade: "ثاني ثانوي",
-    curriculum: "المسار السعودي",
+    grade: "الثاني الثانوي",
+    curriculum: "المنهج المصري",
     rating: 4.9,
-    price: 120,
+    price: 320,
     experience: 8,
-    availability: "مساءً",
+    availability: "المساء",
     color: "#dbe9e4",
     initials: "س",
     bio: "أساعد طلاب المرحلة الثانوية على فهم الرياضيات بثقة، من خلال أمثلة عملية وخطة مراجعة واضحة.",
@@ -36,13 +38,14 @@ export const demoTeachers = [
   },
   {
     id: "omar",
-    name: "عمر الحربي",
+    name: "عمر عبدالسلام",
+    country: "مصر",
     subject: "فيزياء",
     stage: "ثانوي",
-    grade: "ثالث ثانوي",
-    curriculum: "المسار السعودي",
+    grade: "الثالث الثانوي",
+    curriculum: "المنهج المصري",
     rating: 4.8,
-    price: 110,
+    price: 280,
     experience: 6,
     availability: "بعد الظهر",
     color: "#e9e0d0",
@@ -54,13 +57,14 @@ export const demoTeachers = [
   },
   {
     id: "noura",
-    name: "نورة القحطاني",
+    name: "نورهان علي",
+    country: "مصر",
     subject: "لغة إنجليزية",
-    stage: "متوسط",
-    grade: "أولى متوسط",
-    curriculum: "عام",
+    stage: "إعدادي",
+    grade: "الأول الإعدادي",
+    curriculum: "المنهج المصري",
     rating: 4.9,
-    price: 95,
+    price: 250,
     experience: 10,
     availability: "نهاية الأسبوع",
     color: "#e3dff0",
@@ -72,15 +76,16 @@ export const demoTeachers = [
   },
   {
     id: "khaled",
-    name: "خالد الزهراني",
+    name: "خالد حسن",
+    country: "مصر",
     subject: "كيمياء",
     stage: "ثانوي",
-    grade: "ثاني ثانوي",
-    curriculum: "المسار السعودي",
+    grade: "الثاني الثانوي",
+    curriculum: "المنهج المصري",
     rating: 4.7,
-    price: 105,
+    price: 270,
     experience: 5,
-    availability: "مساءً",
+    availability: "المساء",
     color: "#dce8ee",
     initials: "خ",
     bio: "أبني خطة تعلم مرنة للطلاب الذين يريدون رفع مستواهم قبل الاختبارات.",
@@ -92,29 +97,25 @@ export const demoTeachers = [
 
 function Header() {
   return (
-    <header className="border-b border-[#13233a]/10 bg-[#f7f6f2]/90">
+    <header className="border-b border-[#182431]/10 bg-[#fbf8f4]/90">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-10">
         <Link href="/" className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#13233a] font-bold text-[#e8a64a]">
-            ن
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#182431] font-bold text-[#e8a64a]">
+            م
           </span>
-          <b className="text-xl">نُخبة</b>
+          <b className="text-xl">مُعلّم</b>
         </Link>
 
         <div className="flex items-center gap-3 text-sm">
           <Link
             href="/"
-            className="hidden text-[#13233a]/60 sm:block"
+            className="hidden text-[#182431]/60 sm:block"
           >
             الرئيسية
           </Link>
 
-          <Link
-            href="/dashboard/student"
-            className="rounded-full bg-[#13233a] px-4 py-2 font-bold text-white"
-          >
-            لوحة الطالب
-          </Link>
+          <Link href="/teachers" className="hidden font-bold text-[#182431]/60 sm:block">المعلمون</Link>
+          <Link href="/auth" className="rounded-full bg-[#182431] px-4 py-2 font-bold text-white">تسجيل الدخول</Link>
         </div>
       </div>
     </header>
@@ -132,9 +133,14 @@ export default function Marketplace() {
   const addFavorite = trpc.student.favorites.add.useMutation({ onSuccess: () => utils.student.favorites.list.invalidate() });
   const removeFavorite = trpc.student.favorites.remove.useMutation({ onSuccess: () => utils.student.favorites.list.invalidate() });
 
+  const paramsFromSearch = new URLSearchParams(window.location.search);
   const [query, setQuery] = useState("");
-  const [subject, setSubject] = useState("كل المواد");
-  const [maxPrice, setMaxPrice] = useState(200);
+  const [subject, setSubject] = useState(paramsFromSearch.get("subject") ?? "كل المواد");
+  const [grade, setGrade] = useState(paramsFromSearch.get("grade") ?? "");
+  const [country, setCountry] = useState(paramsFromSearch.get("country") ?? "مصر");
+  const [availabilityFilter, setAvailabilityFilter] = useState(paramsFromSearch.get("availability") ?? "");
+  const [maxPrice, setMaxPrice] = useState(Number(paramsFromSearch.get("price")) || 1000);
+  const [sortBy, setSortBy] = useState("experience");
   const [bookingTeacher, setBookingTeacher] = useState<
     typeof demoTeachers[number] | null
   >(null);
@@ -142,17 +148,18 @@ export default function Marketplace() {
   const teachers = (live.data ?? []).map((t) => ({
     id: String(t.id),
     name: t.name,
+    country: t.country ?? "مصر",
     subject: t.subjects[0] ?? "تدريس عام",
     stage: t.educationStages[0] ?? "مراحل متعددة",
     grade: t.grades[0] ?? "صفوف متعددة",
-    curriculum: "نُخبة",
+    curriculum: "مُعلّم",
     rating: 0,
     price: t.hourlyRate ?? 0,
     experience: t.yearsOfExperience,
     availability: t.availability[0] ?? "حسب التوفر",
     color: "#dbe9e4",
     initials: t.name.slice(0, 1),
-    bio: t.bio ?? "ملف معلم معتمد في نُخبة.",
+    bio: t.bio ?? "ملف معلم معتمد في مُعلّم.",
     qualifications: t.qualification ?? "",
     style: t.teachingFormat ?? "",
     match: 100,
@@ -180,10 +187,21 @@ export default function Marketplace() {
               .toLowerCase()
               .includes(query.toLowerCase())) &&
           (subject === "كل المواد" || t.subject === subject) &&
+          (!grade || grade === "كل المراحل" || t.stage.includes(grade) || t.grade.includes(grade)) &&
+          (!country || marketplaceCountryKey(t.country) === marketplaceCountryKey(country)) &&
+          (!availabilityFilter || t.availability.includes(availabilityFilter)) &&
           t.price <= maxPrice,
       ),
-    [allTeachers, query, subject, maxPrice],
+    [allTeachers, query, subject, grade, country, availabilityFilter, maxPrice],
   );
+
+  const sorted = useMemo(() => {
+    const result = [...filtered];
+    if (sortBy === "rating") result.sort((a, b) => b.rating - a.rating);
+    else if (sortBy === "price") result.sort((a, b) => a.price - b.price);
+    else result.sort((a, b) => b.experience - a.experience);
+    return result;
+  }, [filtered, sortBy]);
 
   const startBooking = (
     teacher: typeof demoTeachers[number],
@@ -195,7 +213,7 @@ export default function Marketplace() {
     return (
       <div
         dir="rtl"
-        className="min-h-screen bg-[#f7f6f2] text-[#13233a]"
+        className="min-h-screen bg-[#fbf8f4] text-[#182431]"
       >
         <Header />
 
@@ -203,16 +221,16 @@ export default function Marketplace() {
           <button
             type="button"
             onClick={() => setLocation("/teachers")}
-            className="mb-8 flex items-center gap-2 text-sm font-bold text-[#13233a]/55"
+            className="mb-8 flex items-center gap-2 text-sm font-bold text-[#182431]/55"
           >
             <ArrowRight className="h-4 w-4" />
             العودة للمعلمين
           </button>
 
           <div className="grid gap-7 lg:grid-cols-[1fr_1.4fr]">
-            <aside className="rounded-[2rem] bg-[#13233a] p-7 text-white">
+            <aside className="rounded-[2rem] bg-[#182431] p-7 text-white">
               <div
-                className="grid h-24 w-24 place-items-center rounded-3xl text-4xl font-bold text-[#0e7c78]"
+                className="grid h-24 w-24 place-items-center rounded-3xl text-4xl font-bold text-[#ff7a00]"
                 style={{ backgroundColor: selected.color }}
               >
                 {selected.initials}
@@ -227,20 +245,20 @@ export default function Marketplace() {
               </p>
 
               <div className="mt-8 flex items-center gap-2">
-                <Star className="h-5 w-5 fill-[#e8a64a] text-[#e8a64a]" />
-                <b>{selected.rating}</b>
+                {selected.id.match(/^\d+$/) && selected.rating > 0 ? <Star className="h-5 w-5 fill-[#e8a64a] text-[#e8a64a]" /> : <BadgeCheck className="h-5 w-5 text-[#e8a64a]" />}
+                <b>{selected.id.match(/^\d+$/) ? (selected.rating ? selected.rating : "لا توجد مراجعات بعد") : "بيانات نموذجية"}</b>
               </div>
 
               <div className="mt-8 rounded-2xl bg-white/8 p-4 text-sm leading-7 text-white/65">
                 <ShieldCheck className="mb-2 h-5 w-5 text-[#e8a64a]" />
-                ملف معلم متاح للحجز
+                {selected.id.match(/^\d+$/) ? "ملف معلم معتمد في السوق" : "هذا ملف توضيحي — لا يمثل معلمًا حقيقيًا"}
               </div>
             </aside>
 
             <section className="rounded-[2rem] bg-white p-7">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-bold text-[#0e7c78]">
+                  <p className="text-sm font-bold text-[#ff7a00]">
                     ملف المعلم
                   </p>
                   <h2 className="mt-2 text-2xl font-bold">
@@ -248,15 +266,15 @@ export default function Marketplace() {
                   </h2>
                 </div>
 
-                <div className="rounded-2xl bg-[#e9f5ef] px-4 py-3 text-center">
-                  <b className="block text-xl text-[#0e7c78]">
-                    {selected.price} ر.س
+                <div className="rounded-2xl bg-[#fff0e2] px-4 py-3 text-center">
+                  <b className="block text-xl text-[#ff7a00]">
+                    {selected.price} {currencyForCountry(selected.country)}
                   </b>
-                  <span className="text-xs text-[#13233a]/50">
+                  <span className="text-xs text-[#182431]/50">
                     للساعة
                   </span>
                 </div>
-                <button type="button" onClick={() => selected && toggleTeacherFavorite(selected)} disabled={user?.role !== "student" || !selected || !/^\d+$/.test(selected.id)} className={`rounded-full border px-4 py-3 text-xs font-bold ${selected && favoriteIds.has(selected.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#13233a]/12"}`}>{selected && favoriteIds.has(selected.id) ? "إزالة من المفضلة" : "حفظ في المفضلة"}</button>
+                <button type="button" onClick={() => selected && toggleTeacherFavorite(selected)} disabled={user?.role !== "student" || !selected || !/^\d+$/.test(selected.id)} className={`rounded-full border px-4 py-3 text-xs font-bold ${selected && favoriteIds.has(selected.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#182431]/12"}`}>{selected && favoriteIds.has(selected.id) ? "إزالة من المفضلة" : "حفظ في المفضلة"}</button>
               </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -282,7 +300,7 @@ export default function Marketplace() {
               <button
                 type="button"
                 onClick={() => startBooking(selected)}
-                className="mt-4 w-full rounded-full bg-[#0e7c78] py-4 font-bold text-white"
+                className="mt-4 w-full rounded-full bg-[#ff7a00] py-4 font-bold text-white"
               >
                 احجز درسًا
                 <CalendarDays className="mr-2 inline h-4 w-4" />
@@ -309,29 +327,29 @@ export default function Marketplace() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#f7f6f2] text-[#13233a]"
+      className="min-h-screen bg-[#fbf8f4] text-[#182431]"
     >
       <Header />
 
       <main className="mx-auto max-w-7xl px-5 py-10 lg:px-10">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
-            <p className="text-sm font-bold text-[#0e7c78]">
-              سوق نُخبة
+            <p className="text-sm font-bold text-[#ff7a00]">
+              سوق مُعلّم
             </p>
 
             <h1 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">
               اختر معلمك
             </h1>
 
-            <p className="mt-3 text-[#13233a]/55">
-              معلمون موثّقون، ومواعيد حجز حقيقية.
+            <p className="mt-3 text-[#182431]/55">
+              عروض توضيحية في هذه النسخة؛ بيانات المعلمين والأسعار والملفات التجريبية ليست عروضًا فعلية.
             </p>
           </div>
 
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm font-bold text-[#13233a]/55"
+            className="flex items-center gap-2 text-sm font-bold text-[#182431]/55"
           >
             <ArrowRight className="h-4 w-4" />
             العودة للرئيسية
@@ -342,15 +360,15 @@ export default function Marketplace() {
           <aside className="rounded-[1.5rem] bg-white p-5">
             <div className="flex items-center justify-between">
               <b>تصفية النتائج</b>
-              <Filter className="h-4 w-4 text-[#0e7c78]" />
+              <Filter className="h-4 w-4 text-[#ff7a00]" />
             </div>
 
-            <label className="mt-6 block text-xs font-bold text-[#13233a]/50">
+            <label className="mt-6 block text-xs font-bold text-[#182431]/50">
               ابحث
             </label>
 
-            <div className="mt-2 flex items-center rounded-xl bg-[#f7f6f2] px-3">
-              <Search className="h-4 w-4 text-[#13233a]/40" />
+            <div className="mt-2 flex items-center rounded-xl bg-[#fbf8f4] px-3">
+              <Search className="h-4 w-4 text-[#182431]/40" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -359,14 +377,14 @@ export default function Marketplace() {
               />
             </div>
 
-            <label className="mt-5 block text-xs font-bold text-[#13233a]/50">
+            <label className="mt-5 block text-xs font-bold text-[#182431]/50">
               المادة
             </label>
 
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="mt-2 w-full rounded-xl bg-[#f7f6f2] px-3 py-3 text-sm outline-none"
+              className="mt-2 w-full rounded-xl bg-[#fbf8f4] px-3 py-3 text-sm outline-none"
             >
               <option value="كل المواد">كل المواد</option>
               {subjects.map((x) => (
@@ -376,42 +394,64 @@ export default function Marketplace() {
               ))}
             </select>
 
-            <label className="mt-5 block text-xs font-bold text-[#13233a]/50">
-              الحد الأقصى للسعر · {maxPrice} ر.س
+            <label className="mt-5 block text-xs font-bold text-[#182431]/50">المرحلة</label>
+            <select value={grade} onChange={(e) => setGrade(e.target.value)} className="mt-2 w-full rounded-xl bg-[#fbf8f4] px-3 py-3 text-sm outline-none">
+              <option value="">كل المراحل</option>
+              {["ابتدائي", "إعدادي", "ثانوي", "جامعي"].map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+
+            <label className="mt-5 block text-xs font-bold text-[#182431]/50">الدولة</label>
+            <select value={country} onChange={(e) => setCountry(e.target.value)} className="mt-2 w-full rounded-xl bg-[#fbf8f4] px-3 py-3 text-sm outline-none">
+              <option value="">كل الدول</option>
+              {["مصر", "السعودية", "الإمارات", "الكويت", "الأردن"].map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+
+            <label className="mt-5 block text-xs font-bold text-[#182431]/50">التوفر</label>
+            <select value={availabilityFilter} onChange={(e) => setAvailabilityFilter(e.target.value)} className="mt-2 w-full rounded-xl bg-[#fbf8f4] px-3 py-3 text-sm outline-none">
+              <option value="">أي وقت</option>
+              {["اليوم", "بعد الظهر", "المساء", "نهاية الأسبوع"].map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+
+            <label className="mt-5 block text-xs font-bold text-[#182431]/50">
+              الحد الأقصى للسعر · {maxPrice} ج.م
             </label>
 
             <input
               className="mt-3 w-full"
               type="range"
               min="50"
-              max="200"
-              step="5"
+              max="1000"
+              step="10"
               value={maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
             />
           </aside>
 
           <section>
-            <div className="mb-4 flex items-center justify-between text-sm text-[#13233a]/50">
+            <div className="mb-4 flex items-center justify-between text-sm text-[#182431]/50">
               <span>
                 {filtered.length} معلمًا متاحًا
               </span>
 
-              <span className="flex items-center gap-1">
-                الأعلى توافقًا
-                <ChevronDown className="h-4 w-4" />
-              </span>
+              <label className="flex items-center gap-2">
+                <span>ترتيب حسب</span>
+                <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-lg bg-white px-2 py-1.5 text-xs font-semibold text-[#182431] outline-none">
+                  <option value="experience">الخبرة الأعلى</option>
+                  <option value="rating">التقييم الأعلى</option>
+                  <option value="price">السعر الأقل</option>
+                </select>
+              </label>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              {filtered.map((t) => (
+              {sorted.map((t) => (
                 <article
                   key={t.id}
                   className="rounded-[1.5rem] bg-white p-5 transition hover:-translate-y-1 hover:shadow-xl"
                 >
                   <div className="flex items-start gap-4">
                     <div
-                      className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-bold text-[#0e7c78]"
+                      className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-bold text-[#ff7a00]"
                       style={{ backgroundColor: t.color }}
                     >
                       {t.initials}
@@ -420,41 +460,40 @@ export default function Marketplace() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h2 className="font-bold">{t.name}</h2>
-                        <BadgeCheck className="h-4 w-4 text-[#0e7c78]" />
+                        {/^[0-9]+$/.test(t.id) && <BadgeCheck className="h-4 w-4 text-[#ff7a00]" />}
                       </div>
 
-                      <p className="mt-1 text-sm text-[#13233a]/55">
+                      <p className="mt-1 text-sm text-[#182431]/55">
                         {t.subject} · {t.stage}
                       </p>
 
                       <div className="mt-2 flex items-center gap-1 text-xs">
-                        <Star className="h-3.5 w-3.5 fill-[#e8a64a] text-[#e8a64a]" />
-                        <b>{t.rating}</b>
+                        {!/^\d+$/.test(t.id) ? <span className="rounded-full bg-[#fff0e2] px-2 py-1 text-[10px] font-bold text-[#b85a08]">ملف تجريبي</span> : t.rating > 0 ? <><Star className="h-3.5 w-3.5 fill-[#e8a64a] text-[#e8a64a]" /><b>{t.rating}</b></> : <span className="text-[#182431]/50">لا توجد مراجعات بعد</span>}
                       </div>
                     </div>
 
-                    <span className="mr-auto rounded-full bg-[#e9f5ef] px-2.5 py-1 text-[10px] font-bold text-[#0e7c78]">
-                      {t.match}% توافق
+                    <span className="mr-auto rounded-full bg-[#fff0e2] px-2.5 py-1 text-[10px] font-bold text-[#ff7a00]">
+                      {/^\d+$/.test(t.id) ? "ملف موثّق" : "بيانات عرض"}
                     </span>
                   </div>
 
-                  <p className="mt-5 text-sm leading-6 text-[#13233a]/60">
+                  <p className="mt-5 text-sm leading-6 text-[#182431]/60">
                     {t.bio}
                   </p>
 
-                  <div className="mt-5 flex items-center justify-between border-t border-[#13233a]/8 pt-4">
+                  <div className="mt-5 flex items-center justify-between border-t border-[#182431]/8 pt-4">
                     <span>
-                      <b>{t.price} ر.س</b>
-                      <small className="mr-1 text-[#13233a]/40">
+                      <b>{t.price} {currencyForCountry(t.country)}</b>
+                      <small className="mr-1 text-[#182431]/40">
                         / ساعة
                       </small>
                     </span>
 
                 <div className="flex gap-2">
-                      <button type="button" onClick={() => toggleTeacherFavorite(t)} disabled={user?.role !== "student" || !/^\d+$/.test(t.id)} className={`rounded-full border px-3 py-2 text-xs font-bold ${favoriteIds.has(t.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#13233a]/12"}`}>{favoriteIds.has(t.id) ? "محفوظ" : "مفضلة"}</button>
+                      <button type="button" onClick={() => toggleTeacherFavorite(t)} disabled={user?.role !== "student" || !/^\d+$/.test(t.id)} className={`rounded-full border px-3 py-2 text-xs font-bold ${favoriteIds.has(t.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#182431]/12"}`}>{favoriteIds.has(t.id) ? "محفوظ" : "مفضلة"}</button>
                       <Link
                         href={`/teachers/${t.id}`}
-                        className="rounded-full border border-[#13233a]/12 px-3 py-2 text-xs font-bold"
+                        className="rounded-full border border-[#182431]/12 px-3 py-2 text-xs font-bold"
                       >
                         عرض الملف
                       </Link>
@@ -462,7 +501,7 @@ export default function Marketplace() {
                       <button
                         type="button"
                         onClick={() => startBooking(t)}
-                        className="rounded-full bg-[#13233a] px-3 py-2 text-xs font-bold text-white"
+                        className="rounded-full bg-[#182431] px-3 py-2 text-xs font-bold text-white"
                       >
                         حجز
                       </button>
@@ -474,7 +513,7 @@ export default function Marketplace() {
 
             {filtered.length === 0 && (
               <div className="rounded-3xl bg-white p-12 text-center">
-                <X className="mx-auto text-[#0e7c78]" />
+                <X className="mx-auto text-[#ff7a00]" />
                 <p className="mt-3 font-bold">
                   لا توجد نتائج بهذه التصفية
                 </p>
@@ -503,8 +542,8 @@ function Info({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl bg-[#f7f6f2] p-4">
-      <span className="text-xs text-[#13233a]/45">
+    <div className="rounded-2xl bg-[#fbf8f4] p-4">
+      <span className="text-xs text-[#182431]/45">
         {label}
       </span>
       <b className="mt-2 block text-sm">{value || "—"}</b>
@@ -672,15 +711,15 @@ function BookingModal({
 
   if (confirmed) {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-[#13233a]/60 p-4">
+      <div className="fixed inset-0 z-50 grid place-items-center bg-[#182431]/60 p-4">
         <div
           role="dialog"
           aria-modal="true"
-          className="w-full max-w-lg rounded-[2rem] bg-[#f7f6f2] p-6 shadow-2xl"
+          className="w-full max-w-lg rounded-[2rem] bg-[#fbf8f4] p-6 shadow-2xl"
         >
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-xs font-bold text-[#0e7c78]">
+              <span className="text-xs font-bold text-[#ff7a00]">
                 حجز حقيقي
               </span>
 
@@ -699,13 +738,13 @@ function BookingModal({
           </div>
 
           <div className="py-8 text-center">
-            <CheckCircle2 className="mx-auto h-14 w-14 text-[#0e7c78]" />
+            <CheckCircle2 className="mx-auto h-14 w-14 text-[#ff7a00]" />
 
             <h3 className="mt-4 text-xl font-bold">
               تم إرسال حجزك إلى {teacher.name}
             </h3>
 
-            <p className="mt-3 text-sm leading-6 text-[#13233a]/60">
+            <p className="mt-3 text-sm leading-6 text-[#182431]/60">
               التاريخ: {date}
               <br />
               نوع الدرس: {type}
@@ -716,7 +755,7 @@ function BookingModal({
             <button
               type="button"
               onClick={() => navigate("/student/bookings")}
-              className="mt-7 rounded-full bg-[#0e7c78] px-6 py-3 font-bold text-white"
+              className="mt-7 rounded-full bg-[#ff7a00] px-6 py-3 font-bold text-white"
             >
               عرض حجوزاتي
             </button>
@@ -727,15 +766,15 @@ function BookingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[#13233a]/60 p-4">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[#182431]/60 p-4">
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-lg rounded-[2rem] bg-[#f7f6f2] p-6 shadow-2xl"
+        className="w-full max-w-lg rounded-[2rem] bg-[#fbf8f4] p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between">
           <div>
-            <span className="text-xs font-bold text-[#0e7c78]">
+            <span className="text-xs font-bold text-[#ff7a00]">
               حجز درس
             </span>
 
@@ -802,7 +841,7 @@ function BookingModal({
             </label>
 
             {availableSlots.length === 0 ? (
-              <div className="mt-2 rounded-xl bg-white p-4 text-sm text-[#13233a]/55">
+              <div className="mt-2 rounded-xl bg-white p-4 text-sm text-[#182431]/55">
                 لا توجد مواعيد متاحة في هذا التاريخ.
               </div>
             ) : (
@@ -816,12 +855,12 @@ function BookingModal({
                     }
                     className={`rounded-xl border p-3 text-right text-sm font-bold ${
                       selectedSlot === String(slot.id)
-                        ? "border-[#0e7c78] bg-[#e9f5ef] text-[#0e7c78]"
-                        : "border-[#13233a]/10 bg-white"
+                        ? "border-[#ff7a00] bg-[#fff0e2] text-[#ff7a00]"
+                        : "border-[#182431]/10 bg-white"
                     }`}
                   >
                     {slot.startTime} — {slot.endTime}
-                    <span className="mr-2 text-xs font-normal text-[#13233a]/45">
+                    <span className="mr-2 text-xs font-normal text-[#182431]/45">
                       {slot.timezone}
                     </span>
                   </button>
@@ -861,7 +900,7 @@ function BookingModal({
             createBooking.isPending
           }
           onClick={confirmBooking}
-          className="mt-7 w-full rounded-full bg-[#0e7c78] py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-7 w-full rounded-full bg-[#ff7a00] py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {createBooking.isPending
             ? "جاري إنشاء الحجز..."

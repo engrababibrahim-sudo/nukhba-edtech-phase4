@@ -11,7 +11,7 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={dark ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
       title={dark ? "الوضع الفاتح" : "الوضع الداكن"}
-      className="inline-flex items-center gap-2 rounded-full border border-[#13233a]/15 bg-white px-3 py-2 text-xs font-bold shadow-sm hover:bg-[#e9f5ef] dark:border-white/15 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+      className="inline-flex items-center gap-2 rounded-full border border-[#182431]/15 bg-white px-3 py-2 text-xs font-bold shadow-sm hover:bg-[#fff0e2] dark:border-white/15 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
     >
       {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       <span>{dark ? "فاتح" : "داكن"}</span>

@@ -15,7 +15,7 @@ const rows = (items: FavoriteExportItem[]) => items.map(item => [
   typeLabel(item.favoriteType),
   item.title,
   item.targetId,
-  new Date(item.createdAt).toLocaleDateString("ar-SA"),
+  new Date(item.createdAt).toLocaleDateString("ar-EG"),
 ]);
 
 export function buildFavoritesCsv(items: FavoriteExportItem[]) {

@@ -97,12 +97,12 @@ export default function TeacherAvailability() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#f7f6f2] text-[#13233a]"
+      className="min-h-screen bg-[#fbf8f4] text-[#182431]"
     >
-      <header className="border-b border-[#13233a]/10 bg-white">
+      <header className="border-b border-[#182431]/10 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
           <div>
-            <p className="text-sm font-bold text-[#0e7c78]">
+            <p className="text-sm font-bold text-[#ff7a00]">
               نُخبة
             </p>
             <h1 className="mt-1 text-2xl font-bold">
@@ -113,14 +113,14 @@ export default function TeacherAvailability() {
           <div className="flex gap-2">
             <Link
               href="/teacher/bookings"
-              className="rounded-full border border-[#13233a]/10 px-4 py-2 text-sm font-bold"
+              className="rounded-full border border-[#182431]/10 px-4 py-2 text-sm font-bold"
             >
               حجوزات الطلاب
             </Link>
 
             <Link
               href="/teacher/dashboard"
-              className="rounded-full bg-[#13233a] px-4 py-2 text-sm font-bold text-white"
+              className="rounded-full bg-[#182431] px-4 py-2 text-sm font-bold text-white"
             >
               لوحة المعلم
             </Link>
@@ -132,13 +132,13 @@ export default function TeacherAvailability() {
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
           <section className="rounded-3xl bg-white p-6">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#e9f5ef]">
-                <Plus className="h-5 w-5 text-[#0e7c78]" />
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#fff0e2]">
+                <Plus className="h-5 w-5 text-[#ff7a00]" />
               </div>
 
               <div>
                 <h2 className="font-bold">إضافة وقت توافر</h2>
-                <p className="mt-1 text-xs text-[#13233a]/50">
+                <p className="mt-1 text-xs text-[#182431]/50">
                   حددي المواعيد التي يمكن للطلاب حجزها.
                 </p>
               </div>
@@ -159,7 +159,7 @@ export default function TeacherAvailability() {
                       specificDate: "",
                     }))
                   }
-                  className="mt-2 w-full rounded-xl bg-[#f7f6f2] p-3 text-sm outline-none"
+                  className="mt-2 w-full rounded-xl bg-[#fbf8f4] p-3 text-sm outline-none"
                 >
                   <option value="">اختاري يومًا</option>
 
@@ -171,7 +171,7 @@ export default function TeacherAvailability() {
                 </select>
               </div>
 
-              <div className="text-center text-xs font-bold text-[#13233a]/40">
+              <div className="text-center text-xs font-bold text-[#182431]/40">
                 أو
               </div>
 
@@ -190,7 +190,7 @@ export default function TeacherAvailability() {
                       dayOfWeek: "",
                     }))
                   }
-                  className="mt-2 w-full rounded-xl bg-[#f7f6f2] p-3 text-sm outline-none"
+                  className="mt-2 w-full rounded-xl bg-[#fbf8f4] p-3 text-sm outline-none"
                 />
               </div>
 
@@ -209,7 +209,7 @@ export default function TeacherAvailability() {
                         startTime: event.target.value,
                       }))
                     }
-                    className="mt-2 w-full rounded-xl bg-[#f7f6f2] p-3 text-sm outline-none"
+                    className="mt-2 w-full rounded-xl bg-[#fbf8f4] p-3 text-sm outline-none"
                   />
                 </div>
 
@@ -227,7 +227,7 @@ export default function TeacherAvailability() {
                         endTime: event.target.value,
                       }))
                     }
-                    className="mt-2 w-full rounded-xl bg-[#f7f6f2] p-3 text-sm outline-none"
+                    className="mt-2 w-full rounded-xl bg-[#fbf8f4] p-3 text-sm outline-none"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export default function TeacherAvailability() {
                       timezone: event.target.value,
                     }))
                   }
-                  className="mt-2 w-full rounded-xl bg-[#f7f6f2] p-3 text-sm outline-none"
+                  className="mt-2 w-full rounded-xl bg-[#fbf8f4] p-3 text-sm outline-none"
                 >
                   <option value="Asia/Riyadh">
                     السعودية — الرياض
@@ -268,7 +268,7 @@ export default function TeacherAvailability() {
               <button
                 type="submit"
                 disabled={createAvailability.isPending}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0e7c78] py-4 font-bold text-white disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#ff7a00] py-4 font-bold text-white disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
 
@@ -286,30 +286,30 @@ export default function TeacherAvailability() {
                   مواعيد التوافر الحالية
                 </h2>
 
-                <p className="mt-1 text-sm text-[#13233a]/50">
+                <p className="mt-1 text-sm text-[#182431]/50">
                   هذه المواعيد هي التي سيتم الاعتماد عليها عند الحجز.
                 </p>
               </div>
 
-              <CalendarDays className="h-6 w-6 text-[#0e7c78]" />
+              <CalendarDays className="h-6 w-6 text-[#ff7a00]" />
             </div>
 
             {availability.isLoading && (
-              <div className="mt-8 rounded-2xl bg-[#f7f6f2] p-8 text-center">
+              <div className="mt-8 rounded-2xl bg-[#fbf8f4] p-8 text-center">
                 جاري تحميل المواعيد...
               </div>
             )}
 
             {!availability.isLoading &&
               rows.length === 0 && (
-                <div className="mt-8 rounded-2xl bg-[#f7f6f2] p-10 text-center">
-                  <Clock3 className="mx-auto h-10 w-10 text-[#0e7c78]" />
+                <div className="mt-8 rounded-2xl bg-[#fbf8f4] p-10 text-center">
+                  <Clock3 className="mx-auto h-10 w-10 text-[#ff7a00]" />
 
                   <p className="mt-4 font-bold">
                     لا توجد مواعيد مضافة حتى الآن
                   </p>
 
-                  <p className="mt-2 text-sm text-[#13233a]/50">
+                  <p className="mt-2 text-sm text-[#182431]/50">
                     أضيفي أول موعد ليتمكن الطلاب من الحجز.
                   </p>
                 </div>
@@ -319,11 +319,11 @@ export default function TeacherAvailability() {
               {rows.map((slot) => (
                 <article
                   key={slot.id}
-                  className="flex flex-col gap-4 rounded-2xl bg-[#f7f6f2] p-4 md:flex-row md:items-center md:justify-between"
+                  className="flex flex-col gap-4 rounded-2xl bg-[#fbf8f4] p-4 md:flex-row md:items-center md:justify-between"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <Clock3 className="h-4 w-4 text-[#0e7c78]" />
+                      <Clock3 className="h-4 w-4 text-[#ff7a00]" />
 
                       <b>
                         {slot.specificDate
@@ -332,11 +332,11 @@ export default function TeacherAvailability() {
                       </b>
                     </div>
 
-                    <p className="mt-2 text-sm text-[#13233a]/60">
+                    <p className="mt-2 text-sm text-[#182431]/60">
                       {slot.startTime} — {slot.endTime}
                     </p>
 
-                    <p className="mt-1 text-xs text-[#13233a]/40">
+                    <p className="mt-1 text-xs text-[#182431]/40">
                       المنطقة الزمنية: {slot.timezone}
                     </p>
                   </div>

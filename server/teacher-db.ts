@@ -12,7 +12,7 @@ export async function getTeacherApplication(userId: number) {
 
 export async function createTeacherApplication(userId: number, input: TeacherApplicationInput) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
-  await db.insert(teacherProfiles).values({ userId, ...input, verificationStatus: "pending" });
+  await db.insert(teacherProfiles).values({ ...input, userId, subjects: input.subjects ?? [], educationStages: input.educationStages ?? [], grades: input.grades ?? [], availability: input.availability ?? [], verificationStatus: "pending" });
   return getTeacherApplication(userId);
 }
 
@@ -68,5 +68,5 @@ export async function reviewTeacherApplication(id: number, action: "approve" | "
 export async function listPublicTeachers(page = 1, pageSize = 50) {
   const db = await getDb(); if (!db) return [];
   const safePage = Math.max(1, Math.floor(page)); const safePageSize = Math.min(100, Math.max(1, Math.floor(pageSize)));
-  return db.select({ id: teacherProfiles.id, userId: teacherProfiles.userId, name: teacherProfiles.fullName, avatarUrl: teacherProfiles.profilePhotoUrl, bio: teacherProfiles.bio, qualification: teacherProfiles.qualification, specialization: teacherProfiles.specialization, yearsOfExperience: teacherProfiles.yearsOfExperience, subjects: teacherProfiles.subjects, educationStages: teacherProfiles.educationStages, grades: teacherProfiles.grades, teachingFormat: teacherProfiles.teachingFormat, hourlyRate: teacherProfiles.hourlyRate, availability: teacherProfiles.availability, role: users.role, accountStatus: users.accountStatus, verificationStatus: teacherProfiles.verificationStatus }).from(teacherProfiles).innerJoin(users, eq(users.id, teacherProfiles.userId)).where(and(eq(users.role, "teacher"), eq(users.accountStatus, "active"), eq(teacherProfiles.verificationStatus, "approved"))).limit(safePageSize).offset((safePage - 1) * safePageSize);
+  return db.select({ id: teacherProfiles.id, userId: teacherProfiles.userId, name: teacherProfiles.fullName, avatarUrl: teacherProfiles.profilePhotoUrl, country: teacherProfiles.country, bio: teacherProfiles.bio, qualification: teacherProfiles.qualification, specialization: teacherProfiles.specialization, yearsOfExperience: teacherProfiles.yearsOfExperience, subjects: teacherProfiles.subjects, educationStages: teacherProfiles.educationStages, grades: teacherProfiles.grades, teachingFormat: teacherProfiles.teachingFormat, hourlyRate: teacherProfiles.hourlyRate, availability: teacherProfiles.availability, role: users.role, accountStatus: users.accountStatus, verificationStatus: teacherProfiles.verificationStatus }).from(teacherProfiles).innerJoin(users, eq(users.id, teacherProfiles.userId)).where(and(eq(users.role, "teacher"), eq(users.accountStatus, "active"), eq(teacherProfiles.verificationStatus, "approved"))).limit(safePageSize).offset((safePage - 1) * safePageSize);
 }

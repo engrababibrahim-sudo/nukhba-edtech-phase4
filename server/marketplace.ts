@@ -4,6 +4,7 @@ export type PublicMarketplaceTeacher = {
   id: number;
   name: string;
   avatarUrl: string | null;
+  country: string | null;
   bio: string | null;
   qualification: string | null;
   specialization: string | null;
@@ -16,13 +17,14 @@ export type PublicMarketplaceTeacher = {
   availability: string[];
 };
 
-type MarketplaceCandidate = PublicMarketplaceTeacher & { role?: string; accountStatus?: string; verificationStatus?: string; userId?: number };
+type MarketplaceCandidate = Omit<PublicMarketplaceTeacher, "country"> & { country?: string | null; role?: string; accountStatus?: string; verificationStatus?: string; userId?: number };
 
 export function toPublicMarketplaceTeacher(candidate: MarketplaceCandidate): PublicMarketplaceTeacher {
   return {
     id: candidate.id,
     name: candidate.name,
     avatarUrl: candidate.avatarUrl,
+    country: candidate.country ?? null,
     bio: candidate.bio,
     qualification: candidate.qualification,
     specialization: candidate.specialization,

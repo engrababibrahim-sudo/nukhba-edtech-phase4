@@ -72,7 +72,7 @@ export async function getParentProfile(userId: number) {
 }
 export async function upsertStudentProfile(userId: number, data: Omit<Partial<typeof studentProfiles.$inferInsert>, "userId">) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
-  await db.insert(studentProfiles).values({ userId, ...data }).onDuplicateKeyUpdate({ set: { ...data, updatedAt: new Date() } });
+  await db.insert(studentProfiles).values({ ...data, userId, preferredSubjects: data.preferredSubjects ?? [], preferredAvailability: data.preferredAvailability ?? [] }).onDuplicateKeyUpdate({ set: { ...data, updatedAt: new Date() } });
   return getStudentProfile(userId);
 }
 export async function provisionStudentUser(userId: number) {
@@ -86,7 +86,7 @@ export async function getLearningProfile(studentUserId: number) {
 }
 export async function upsertLearningProfile(studentUserId: number, data: Omit<Partial<typeof learningProfiles.$inferInsert>, "studentUserId">) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
-  await db.insert(learningProfiles).values({ studentUserId, ...data }).onDuplicateKeyUpdate({ set: { ...data, updatedAt: new Date() } });
+  await db.insert(learningProfiles).values({ ...data, studentUserId, answers: data.answers ?? {} }).onDuplicateKeyUpdate({ set: { ...data, updatedAt: new Date() } });
   return getLearningProfile(studentUserId);
 }
 

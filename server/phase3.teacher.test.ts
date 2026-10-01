@@ -37,7 +37,7 @@ describe("Phase 3 teacher registration and approval", () => {
   it("requires rejection reason and keeps unapproved teachers out of the public feed", async () => {
     await expect(appRouter.createCaller(context({ id: 20, role: "admin" })).admin.teachers.reject({ id: 10, rejectionReason: " " })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(appRouter.createCaller(context({ id: 20, role: "admin" })).admin.teachers.reject({ id: 10, rejectionReason: "يرجى إضافة المؤهل" })).resolves.toMatchObject({ verificationStatus: "rejected" });
-    await expect(appRouter.createCaller(context()).marketplace.teachers()).resolves.toEqual([{ id: 10, name: "معلم معتمد", avatarUrl: null, bio: "نبذة", qualification: "بكالوريوس", specialization: "رياضيات", yearsOfExperience: 5, subjects: ["رياضيات"], educationStages: ["ثانوي"], grades: ["ثاني"], teachingFormat: "فردي", hourlyRate: 100, availability: ["مساء"] }]);
+    await expect(appRouter.createCaller(context()).marketplace.teachers()).resolves.toEqual([{ id: 10, name: "معلم معتمد", avatarUrl: null, country: null, bio: "نبذة", qualification: "بكالوريوس", specialization: "رياضيات", yearsOfExperience: 5, subjects: ["رياضيات"], educationStages: ["ثانوي"], grades: ["ثاني"], teachingFormat: "فردي", hourlyRate: 100, availability: ["مساء"] }]);
   });
   it("prevents self approval", async () => {
     await expect(appRouter.createCaller(context({ id: 7, role: "admin" })).admin.teachers.approve({ id: 10 })).rejects.toMatchObject({ code: "FORBIDDEN" });
