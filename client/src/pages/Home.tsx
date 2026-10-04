@@ -45,42 +45,6 @@ const initial: Onboarding = {
   time: "",
 };
 
-const teachers = [
-  {
-    id: "sara",
-    name: "سارة محمود",
-    subject: "رياضيات",
-    stage: "الثانوية العامة",
-    years: 8,
-    price: "٣٢٠",
-    initials: "س",
-    color: "#f6e2d5",
-    area: "القاهرة · أونلاين",
-  },
-  {
-    id: "omar",
-    name: "عمر عبدالسلام",
-    subject: "فيزياء",
-    stage: "الثانوية العامة",
-    years: 6,
-    price: "٢٨٠",
-    initials: "ع",
-    color: "#e4eadc",
-    area: "الجيزة · أونلاين",
-  },
-  {
-    id: "noura",
-    name: "نورهان علي",
-    subject: "لغة إنجليزية",
-    stage: "الإعدادية",
-    years: 10,
-    price: "٢٥٠",
-    initials: "ن",
-    color: "#e9e2f1",
-    area: "الإسكندرية · أونلاين",
-  },
-];
-
 const faqs = [
   "كيف أختار المعلم المناسب؟",
   "هل أستطيع متابعة تعلم أكثر من ابن؟",
@@ -97,6 +61,18 @@ const navLinks = [
 ] as const;
 
 export default function Home() {
+  const marketplace = trpc.marketplace.teachers.useQuery();
+  const teachers = (marketplace.data ?? []).slice(0, 3).map((teacher) => ({
+    id: teacher.id,
+    name: teacher.name,
+    subject: teacher.subjects[0] ?? "تدريس عام",
+    stage: teacher.educationStages[0] ?? "مراحل متعددة",
+    years: teacher.yearsOfExperience,
+    price: teacher.hourlyRate,
+    initials: teacher.name.slice(0, 1),
+    color: "#f6e2d5",
+    area: [teacher.country].filter(Boolean).join(" · ") || "أونلاين",
+  }));
   const [menuOpen, setMenuOpen] = useState(false);
   const [faq, setFaq] = useState<number | null>(0);
   const [search, setSearch] = useState({ grade: "", subject: "", country: "مصر", format: "فردي مباشر", price: "", availability: "" });
@@ -260,7 +236,7 @@ export default function Home() {
               [Search, "١", "ابحث بذكاء", "اختر المادة والمرحلة، ثم قارن الملفات والأسعار."],
               [ShieldCheck, "٢", "اختر بثقة", "اطلع على خبرة المعلم وطريقته والمواعيد المتاحة."],
               [CalendarDays, "٣", "احجز موعدك", "أرسل طلب الدرس في الوقت الذي يناسبك."],
-              [BookOpen, "٤", "تابع تقدمك", "احتفظ بملخص الدرس والخطوة القادمة للتعلم."],
+              [BookOpen, "٤", "تابع تقدمك", "تابع حالة طلب الحجز من حسابك."],
             ].map(([Icon, number, title, copy]) => {
               const StepIcon = Icon as typeof Search;
               return <article key={String(number)} className="group rounded-[1.5rem] bg-[#f4efe9] p-5 transition hover:-translate-y-1 hover:bg-[#fff0e2]"><div className="flex items-center justify-between"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-[#df6900] shadow-sm"><StepIcon className="h-5 w-5" /></span><span className="text-xs font-bold text-[#182431]/25">{String(number)}</span></div><h3 className="mt-7 text-lg font-bold">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-[#182431]/58">{String(copy)}</p></article>;
@@ -270,21 +246,22 @@ export default function Home() {
 
         <section id="teachers" className="bg-[#f2ece5] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-10">
-            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><SectionHeading eyebrow="معلمون في مجالات مختلفة" title={<>تعرّف على من<br className="hidden sm:block" /> يناسب رحلتك.</>} copy="نماذج توضيحية لبطاقات المعلمين — البيانات والأسعار المعروضة تجريبية." /><Link href="/teachers" className="mb-1 inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[#c35a00]">استكشف المعلمين <ArrowLeft className="h-4 w-4" /></Link></div>
+            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><SectionHeading eyebrow="معلمون في مجالات مختلفة" title={<>تعرّف على من<br className="hidden sm:block" /> يناسب رحلتك.</>} copy="ملفات المعلمين المعتمدة المنشورة حاليًا في السوق." /><Link href="/teachers" className="mb-1 inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[#c35a00]">استكشف المعلمين <ArrowLeft className="h-4 w-4" /></Link></div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {teachers.map((teacher) => <article key={teacher.id} className="rounded-[1.5rem] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                 <div className="flex items-start gap-3"><span style={{ backgroundColor: teacher.color }} className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-xl font-bold text-[#182431]">{teacher.initials}</span><div className="min-w-0"><div className="flex items-center gap-1.5"><h3 className="truncate font-bold">{teacher.name}</h3></div><p className="mt-1 text-xs text-[#182431]/55">{teacher.subject} · {teacher.stage}</p><p className="mt-1.5 text-[11px] text-[#182431]/45">{teacher.area}</p></div><span className="mr-auto rounded-full bg-[#fff0e2] px-2 py-1 text-[10px] font-bold text-[#b85a08]">Demo</span></div>
-                <div className="mt-5 flex items-center justify-between rounded-xl bg-[#fff5eb] px-3.5 py-3"><span className="text-xs text-[#182431]/55">نموذج بطاقة</span><b className="text-sm text-[#c35a00]">بيانات توضيحية</b></div>
-                <div className="mt-4 flex items-center justify-between gap-2"><span><b className="text-sm">{teacher.price} ج.م</b><small className="mr-1 text-[10px] text-[#182431]/45">/ ٦٠ دقيقة</small></span><Link href={`/teachers/${teacher.id}`} className="rounded-full bg-[#182431] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#31485e]">عرض الملف</Link></div>
-                <p className="mt-3 text-[10px] text-[#182431]/40">ملف تجريبي للتوضيح فقط · خبرة {teacher.years} سنوات</p>
+                <div className="mt-5 flex items-center justify-between rounded-xl bg-[#fff5eb] px-3.5 py-3"><span className="text-xs text-[#182431]/55">الخبرة</span><b className="text-sm text-[#c35a00]">{teacher.years} سنوات</b></div>
+                <div className="mt-4 flex items-center justify-between gap-2"><span><b className="text-sm">{teacher.price ?? "—"} ج.م</b><small className="mr-1 text-[10px] text-[#182431]/45">/ ساعة</small></span><Link href={`/teachers/${teacher.id}`} className="rounded-full bg-[#182431] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#31485e]">عرض الملف</Link></div>
               </article>)}
+              {!marketplace.isLoading && !marketplace.isError && teachers.length === 0 && <div className="rounded-2xl bg-white p-6 text-sm text-[#182431]/60 md:col-span-2 lg:col-span-3">لا توجد ملفات معلمين منشورة بعد. يمكنك استكشاف السوق لاحقًا أو تقديم طلب الانضمام كمعلم.</div>}
+              {marketplace.isError && <div role="alert" className="rounded-2xl bg-white p-6 text-sm text-red-700 md:col-span-2 lg:col-span-3">تعذر تحميل ملفات المعلمين حاليًا. حاول مرة أخرى لاحقًا.</div>}
             </div>
           </div>
         </section>
 
         <section id="parents" className="mx-auto grid max-w-7xl gap-10 px-5 py-20 lg:grid-cols-[.9fr_1.1fr] lg:items-center lg:px-10 lg:py-24">
-          <div><p className="mb-4 text-sm font-bold text-[#c35a00]">للطلاب وأولياء الأمور</p><h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">تعلم أوضح.<br />وطمأنينة أكبر.</h2><p className="mt-5 max-w-lg leading-8 text-[#182431]/60">ملف لكل طالب، ومتابعة للحصص القادمة والتقارير والواجبات — حتى تعرف الأسرة ما تم وما الخطوة التالية.</p><button onClick={openOnboarding} className="mt-7 rounded-full bg-[#182431] px-6 py-3.5 text-sm font-bold text-white">ابنِ ملف تعلمك <ArrowLeft className="mr-1 inline h-4 w-4" /></button></div>
-          <div className="rounded-[1.75rem] bg-[#182431] p-5 text-white shadow-xl shadow-[#182431]/15 sm:p-7"><div className="flex items-center justify-between"><div><span className="text-[10px] font-semibold tracking-wide text-white/45">لوحة متابعة · نموذج تجريبي</span><h3 className="mt-2 text-xl font-bold">رحلة تعلّم ليلى</h3></div><span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#ff7a00] text-white"><GraduationCap className="h-5 w-5" /></span></div><div className="mt-6 grid grid-cols-3 gap-2 text-center"><Metric value="٨" label="دروس مكتملة" /><Metric value="٧٦٪" label="تقدم هذا الشهر" /><Metric value="٢" label="واجبات قادمة" /></div><div className="mt-4 rounded-2xl bg-white/[0.08] p-4"><div className="flex items-center justify-between text-xs"><b>الخطوة القادمة</b><span className="text-white/50">الخميس · ٦:٣٠ م</span></div><div className="mt-3 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white/10 text-[#ffb36e]"><BookOpen className="h-4 w-4" /></span><div><b className="block text-sm">مراجعة الجبر</b><span className="mt-1 block text-[10px] text-white/50">مع أ. سارة · درس أونلاين</span></div><ArrowLeft className="mr-auto h-4 w-4 text-white/45" /></div></div><p className="mt-4 text-[10px] text-white/45">واجهة توضيحية؛ المعلومات الشخصية والحصص ليست حقيقية.</p></div>
+          <div><p className="mb-4 text-sm font-bold text-[#c35a00]">للطلاب وأولياء الأمور</p><h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">تعلم أوضح.<br />وطمأنينة أكبر.</h2><p className="mt-5 max-w-lg leading-8 text-[#182431]/60">ملف لكل طالب، ومتابعة للحصص القادمة والملفات المرتبطة بالحساب. تقارير الدرجات والحضور والواجبات ليست مفعلة بعد.</p><div className="mt-7 flex flex-wrap gap-3"><button onClick={openOnboarding} className="rounded-full bg-[#182431] px-6 py-3.5 text-sm font-bold text-white">ابنِ ملف تعلمك <ArrowLeft className="mr-1 inline h-4 w-4" /></button><Link href="/auth?role=parent" className="rounded-full border border-[#182431]/15 bg-white px-6 py-3.5 text-sm font-bold">إنشاء حساب ولي أمر</Link></div></div>
+          <div className="rounded-[1.75rem] border border-[#182431]/10 bg-white p-6 sm:p-8"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff0e2] text-[#d86100]"><GraduationCap className="h-6 w-6" /></span><h3 className="mt-5 text-xl font-bold">متابعة عملية لما هو متاح</h3><p className="mt-3 text-sm leading-7 text-[#182431]/60">احفظ تفضيلات التعلم وتابع طلبات الحجز والملفات المرتبطة بحسابك. تقارير الدرجات والحضور والواجبات ليست مفعلة بعد.</p><Link href="/auth" className="mt-5 inline-flex rounded-full bg-[#182431] px-5 py-3 text-sm font-bold text-white">الدخول إلى حسابك</Link></div>
         </section>
 
         <section id="tutors" className="bg-[#fff0e2] py-16 sm:py-20">
@@ -297,7 +274,7 @@ export default function Home() {
         </section>
 
         <section id="faq" className="border-y border-[#182431]/[0.06] bg-white py-20">
-          <div className="mx-auto max-w-3xl px-5"><div className="text-center"><p className="mb-3 text-sm font-bold text-[#c35a00]">الأسئلة الشائعة</p><h2 className="text-3xl font-bold sm:text-4xl">كل ما تحتاج معرفته</h2></div><div className="mt-9 space-y-3">{faqs.map((question, index) => <div key={question} className="rounded-2xl bg-[#fbf8f4] px-5"><button className="flex w-full items-center justify-between gap-4 py-5 text-right font-bold" onClick={() => setFaq(faq === index ? null : index)}>{question}<ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${faq === index ? "rotate-180" : ""}`} /></button>{faq === index && <p className="pb-5 text-sm leading-7 text-[#182431]/60">نُعلّم تساعدك على استكشاف ملفات المعلمين ومقارنة المواد والمواعيد والأسعار. أي ملف يحمل وسم «تجريبي» هو بيانات عرض فقط؛ أما الحجز والدفع الفعليان فيعتمدان على تهيئة حسابك ومزودي الخدمة المعتمدين.</p>}</div>)}</div></div>
+          <div className="mx-auto max-w-3xl px-5"><div className="text-center"><p className="mb-3 text-sm font-bold text-[#c35a00]">الأسئلة الشائعة</p><h2 className="text-3xl font-bold sm:text-4xl">كل ما تحتاج معرفته</h2></div><div className="mt-9 space-y-3">{faqs.map((question, index) => <div key={question} className="rounded-2xl bg-[#fbf8f4] px-5"><button className="flex w-full items-center justify-between gap-4 py-5 text-right font-bold" onClick={() => setFaq(faq === index ? null : index)}>{question}<ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${faq === index ? "rotate-180" : ""}`} /></button>{faq === index && <p className="pb-5 text-sm leading-7 text-[#182431]/60">نُعلّم تساعدك على استكشاف ملفات المعلمين ومقارنة المواد والمواعيد والأسعار. لا تظهر بيانات معلمين تجريبية في السوق. الدفع الإلكتروني والتقارير والفصول المباشرة غير مفعلة في هذه النسخة.</p>}</div>)}</div></div>
         </section>
       </main>
 
@@ -341,11 +318,12 @@ function OnboardingResult({ data, onClose }: { data: Onboarding; onClose: () => 
     }
   }, [data, me.data, payload, save.mutate]);
 
+  const liveTeachers = trpc.marketplace.teachers.useQuery();
   const recommendations = useMemo(() => {
-    if (data.subject === "فيزياء") return teachers.slice(1, 2);
-    if (data.subject === "لغة إنجليزية") return teachers.slice(2, 3);
-    return teachers.slice(0, 2);
-  }, [data.subject]);
+    const items = liveTeachers.data ?? [];
+    const matching = items.filter((teacher) => teacher.subjects.includes(data.subject));
+    return (matching.length ? matching : items).slice(0, 2);
+  }, [data.subject, liveTeachers.data]);
 
-  return <div className="mt-8"><div className="rounded-2xl bg-[#fff0e2] p-5"><div className="flex items-start gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff7a00] text-white"><Check /></span><div><b>اكتمل ملف التفضيلات</b><p className="mt-1 text-sm leading-6 text-[#182431]/60">{me.data ? (save.isSuccess ? "تم حفظ تفضيلات التعلم على الخادم." : save.isError ? "تعذر الحفظ الآن؛ يمكنك متابعة استكشاف المعلمين." : "جارٍ حفظ تفضيلات التعلم…") : "يمكن حفظ الملف بعد تسجيل الدخول. هذه الترشيحات تجريبية."}</p></div></div><div className="mt-4 flex flex-wrap gap-2">{[data.role, data.stage, data.grade, data.subject, data.goal, data.time].filter(Boolean).map((item) => <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-semibold">{item}</span>)}</div></div><h3 className="mt-7 text-lg font-bold">ترشيحات أولية · Demo</h3><div className="mt-3 space-y-3">{recommendations.map((teacher) => <div key={teacher.id} className="flex items-center gap-3 rounded-2xl bg-white p-4"><span style={{ backgroundColor: teacher.color }} className="grid h-11 w-11 place-items-center rounded-xl font-bold">{teacher.initials}</span><div><b className="text-sm">{teacher.name}</b><p className="mt-1 text-xs text-[#182431]/50">{teacher.subject} · {teacher.stage} · بيانات تجريبية</p></div><span className="mr-auto rounded-full bg-[#fff0e2] px-3 py-1 text-xs font-bold text-[#c35a00]">Demo</span></div>)}</div><div className="mt-6 flex gap-3"><Link href="/teachers" onClick={onClose} className="flex-1 rounded-full bg-[#ff7a00] py-3 text-center text-sm font-bold text-white">استكشف المعلمين</Link><button onClick={onClose} className="rounded-full border border-[#182431]/15 px-5 py-3 text-sm font-bold">إغلاق</button></div></div>;
+  return <div className="mt-8"><div className="rounded-2xl bg-[#fff0e2] p-5"><div className="flex items-start gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff7a00] text-white"><Check /></span><div><b>اكتمل ملف التفضيلات</b><p className="mt-1 text-sm leading-6 text-[#182431]/60">{me.data ? (save.isSuccess ? "تم حفظ تفضيلات التعلم على الخادم." : save.isError ? "تعذر الحفظ الآن؛ يمكنك متابعة استكشاف المعلمين." : "جارٍ حفظ تفضيلات التعلم…") : "يمكن حفظ الملف بعد تسجيل الدخول. الترشيحات مبنية على ملفات المعلمين المنشورة."}</p></div></div><div className="mt-4 flex flex-wrap gap-2">{[data.role, data.stage, data.grade, data.subject, data.goal, data.time].filter(Boolean).map((item) => <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-semibold">{item}</span>)}</div></div><h3 className="mt-7 text-lg font-bold">معلمون مناسبون</h3><div className="mt-3 space-y-3">{recommendations.map((teacher) => <div key={teacher.id} className="flex items-center gap-3 rounded-2xl bg-white p-4"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#fff0e2] font-bold">{teacher.name.slice(0, 1)}</span><div><b className="text-sm">{teacher.name}</b><p className="mt-1 text-xs text-[#182431]/50">{teacher.subjects.join("، ")} · {teacher.educationStages.join("، ")}</p></div><span className="mr-auto rounded-full bg-[#fff0e2] px-3 py-1 text-xs font-bold text-[#c35a00]">معتمد</span></div>)}{!liveTeachers.isLoading && recommendations.length === 0 && <p className="rounded-xl bg-white p-4 text-sm text-[#182431]/60">لا توجد ملفات معلمين منشورة تطابق تفضيلاتك حتى الآن.</p>}</div><div className="mt-6 flex gap-3"><Link href="/teachers" onClick={onClose} className="flex-1 rounded-full bg-[#ff7a00] py-3 text-center text-sm font-bold text-white">استكشف المعلمين</Link><button onClick={onClose} className="rounded-full border border-[#182431]/15 px-5 py-3 text-sm font-bold">إغلاق</button></div></div>;
 }

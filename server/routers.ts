@@ -9,12 +9,14 @@ import {
   protectedProcedure,
   publicProcedure,
   router,
+  superAdminProcedure,
 } from "./_core/trpc";
 import { canCreateParentChildLink, isAdmin } from "./authorization";
 import {
   createParentStudentLink,
   countSuperAdmins,
   getActiveChild,
+  getAdminOverview,
   getLearningProfile,
   getParentProfile,
   getStudentProfile,
@@ -24,6 +26,7 @@ import {
   listStudentFavorites,
   setRelationshipStatusWithAudit,
   addStudentFavorite,
+  activateParentUser,
   removeStudentFavorite,
   upsertLearningProfile,
   upsertStudentProfile,
@@ -125,7 +128,10 @@ const availabilityInput = z.object({
     .optional(),
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
-  timezone: z.string().min(1).max(64).default("UTC"),
+  timezone: z.string().min(1).max(64).default("Africa/Cairo").refine((value) => {
+    try { new Intl.DateTimeFormat("en-US", { timeZone: value }); return true; }
+    catch { return false; }
+  }, "المنطقة الزمنية غير صالحة"),
 });
 
 export const appRouter = router({
@@ -133,6 +139,12 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
+    activateParent: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!["user", "parent"].includes(ctx.user.role) || ctx.user.accountStatus !== "active") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "هذا الإجراء متاح للحسابات العادية النشطة فقط" });
+      }
+      return activateParentUser(ctx.user.id);
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, {
@@ -243,7 +255,6 @@ export const appRouter = router({
             teacherId: z.number().int().positive(),
             startAt: z.string().datetime(),
             endAt: z.string().datetime(),
-            timezone: z.string().min(1).max(64).default("UTC"),
             notes: z.string().max(5000).optional().nullable(),
           }),
         )
@@ -262,7 +273,6 @@ export const appRouter = router({
             teacherId: input.teacherId,
             startAt: new Date(input.startAt),
             endAt: new Date(input.endAt),
-            timezone: input.timezone,
             notes: input.notes ?? null,
           });
         }),
@@ -719,11 +729,7 @@ export const appRouter = router({
   }),
 
   admin: router({
-    overview: privilegedProcedure.query(async () => {
-      const students = await listStudentsForAdmin();
-      const teachers = await listTeacherApplications();
-      return { studentCount: students.length, teacherCount: teachers.length };
-    }),
+    overview: privilegedProcedure.query(() => getAdminOverview()),
     students: router({
       list: privilegedProcedure.query(() => listStudentsForAdmin()),
     }),
@@ -859,7 +865,7 @@ export const appRouter = router({
     }),
 
     users: router({
-      updateAccess: privilegedProcedure
+      updateAccess: superAdminProcedure
         .input(
           z
             .object({
@@ -949,15 +955,23 @@ export const appRouter = router({
             });
           }
 
-          const existing = await updateUserAccessWithAudit(
-            input.targetUserId,
-            {
-              role: input.role,
-              accountStatus: input.accountStatus,
-            },
-            ctx.user.id,
-            input.reason,
-          );
+          let existing;
+          try {
+            existing = await updateUserAccessWithAudit(
+              input.targetUserId,
+              {
+                role: input.role,
+                accountStatus: input.accountStatus,
+              },
+              ctx.user.id,
+              input.reason,
+            );
+          } catch (error) {
+            if (error instanceof Error && error.message.includes("آخر مدير عام")) {
+              throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
+            }
+            throw error;
+          }
 
           if (!existing) {
             throw new TRPCError({

@@ -7,8 +7,12 @@ export type FavoriteExportItem = {
 
 const columns = ["النوع", "العنوان", "المعرف", "تاريخ الحفظ"];
 const typeLabel = (value: FavoriteExportItem["favoriteType"]) => value === "teacher" ? "معلم" : "خطة تعلم";
-const cell = (value: unknown) => {
+const safeSpreadsheetText = (value: unknown) => {
   const text = String(value ?? "");
+  return /^[\t\r ]*[=+@-]/.test(text) ? `'${text}` : text;
+};
+const cell = (value: unknown) => {
+  const text = safeSpreadsheetText(value);
   return `"${text.replace(/"/g, '""')}"`;
 };
 const rows = (items: FavoriteExportItem[]) => items.map(item => [

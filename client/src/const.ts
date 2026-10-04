@@ -2,6 +2,11 @@ import { OAUTH_STATE_COOKIE, encodeOAuthState } from "@shared/const";
 
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
+export function isSafeReturnTo(value: string | null | undefined, origin = window.location.origin): value is string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return false;
+  try { return new URL(value, origin).origin === origin; } catch { return false; }
+}
+
 // Start the Manus OAuth login. Call this from an event handler or effect at the
 // moment you want to navigate, e.g. `onClick={() => startLogin()}`.
 //
@@ -17,7 +22,7 @@ export const startLogin = (returnTo?: string) => {
   const appId = import.meta.env.VITE_APP_ID;
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
 
-  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+  if (isSafeReturnTo(returnTo)) {
     try {
       sessionStorage.setItem("nukhba-auth-intent", "1");
       sessionStorage.setItem("nukhba-auth-return-to", returnTo);

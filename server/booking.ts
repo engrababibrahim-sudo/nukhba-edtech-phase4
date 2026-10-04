@@ -67,9 +67,25 @@ function ensureTimeWindow(startAt: Date, endAt: Date) {
   if (
     !Number.isFinite(startAt.getTime()) ||
     !Number.isFinite(endAt.getTime()) ||
-    startAt >= endAt
+    startAt >= endAt ||
+    startAt.getTime() <= Date.now()
   ) {
-    throw new Error("نافذة الوقت غير صالحة");
+    throw new Error("نافذة الوقت غير صالحة أو بدأت بالفعل");
+  }
+}
+
+function assertValidTimezone(timezone: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+  } catch {
+    throw new Error("المنطقة الزمنية غير صالحة");
+  }
+}
+
+function assertValidClockTime(value: string) {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match || Number(match[1]) > 23 || Number(match[2]) > 59) {
+    throw new Error("صيغة الوقت غير صالحة");
   }
 }
 
@@ -151,18 +167,7 @@ async function assertAvailability(
   teacherId: number,
   startAt: Date,
   endAt: Date,
-  timezone: string,
 ) {
-  const start = localSlot(startAt, timezone);
-  const end = localSlot(endAt, timezone);
-
-  if (
-    start.date !== end.date ||
-    start.dayOfWeek !== end.dayOfWeek
-  ) {
-    throw new Error("يجب أن يكون الحجز داخل يوم واحد");
-  }
-
   const rows = await tx
     .select()
     .from(teacherAvailability)
@@ -171,27 +176,29 @@ async function assertAvailability(
         eq(teacherAvailability.teacherId, teacherId),
         eq(teacherAvailability.status, "active"),
       ),
-    );
+    )
+    .for("update");
 
-  const allowed = rows.some(
-    (slot: typeof teacherAvailability.$inferSelect) => {
+  for (const slot of rows as typeof teacherAvailability.$inferSelect[]) {
+    try {
+      assertValidTimezone(slot.timezone);
+      const start = localSlot(startAt, slot.timezone);
+      const end = localSlot(endAt, slot.timezone);
+      if (start.date !== end.date || start.dayOfWeek !== end.dayOfWeek) {
+        continue;
+      }
+
       const dateMatches = slot.specificDate === start.date;
-
-      const recurrenceMatches =
-        slot.specificDate === null &&
-        slot.dayOfWeek === start.dayOfWeek;
-
-      return (
-        (dateMatches || recurrenceMatches) &&
-        slot.startTime <= start.time &&
-        slot.endTime >= end.time
-      );
-    },
-  );
-
-  if (!allowed) {
-    throw new Error("الوقت خارج مواعيد توفر المعلم");
+      const recurrenceMatches = slot.specificDate === null && slot.dayOfWeek === start.dayOfWeek;
+      if ((dateMatches || recurrenceMatches) && slot.startTime <= start.time && slot.endTime >= end.time) {
+        return slot.timezone;
+      }
+    } catch {
+      // Invalid legacy availability rows are ignored; the client cannot choose their timezone.
+    }
   }
+
+  throw new Error("الوقت خارج مواعيد توفر المعلم");
 }
 
 function conflictWhere(
@@ -217,7 +224,6 @@ export async function createBooking(
     teacherId: number;
     startAt: Date;
     endAt: Date;
-    timezone: string;
     notes?: string | null;
   },
 ) {
@@ -249,12 +255,11 @@ export async function createBooking(
 
     await getEligibleTeacher(tx, input.teacherId);
 
-    await assertAvailability(
+    const timezone = await assertAvailability(
       tx,
       input.teacherId,
       input.startAt,
       input.endAt,
-      input.timezone,
     );
 
     const teacherConflict = await tx
@@ -296,7 +301,7 @@ export async function createBooking(
       teacherId: input.teacherId,
       startAt: input.startAt,
       endAt: input.endAt,
-      timezone: input.timezone,
+      timezone,
       notes: input.notes ?? null,
       status: "pending",
     });
@@ -321,7 +326,7 @@ export async function listStudentBookings(studentId: number) {
   return db
     .select({
       booking: bookings,
-      teacher: teacherProfiles,
+      teacher: { fullName: teacherProfiles.fullName },
     })
     .from(bookings)
     .innerJoin(
@@ -340,7 +345,7 @@ export async function listTeacherBookings(teacherId: number) {
   return db
     .select({
       booking: bookings,
-      student: users,
+      student: { id: users.id, name: users.name },
     })
     .from(bookings)
     .innerJoin(users, eq(users.id, bookings.studentId))
@@ -394,6 +399,10 @@ export async function createAvailability(
   if (input.startTime >= input.endTime) {
     throw new Error("وقت البداية يجب أن يسبق النهاية");
   }
+
+  assertValidClockTime(input.startTime);
+  assertValidClockTime(input.endTime);
+  assertValidTimezone(input.timezone);
 
   const result = await db
     .insert(teacherAvailability)
@@ -453,6 +462,10 @@ export async function updateAvailability(
     throw new Error("وقت البداية يجب أن يسبق النهاية");
   }
 
+  assertValidClockTime(next.startTime);
+  assertValidClockTime(next.endTime);
+  assertValidTimezone(next.timezone);
+
   await db
     .update(teacherAvailability)
     .set({
@@ -511,30 +524,12 @@ export async function cancelStudentBooking(
     throw new Error("Database unavailable");
   }
 
-  await db
-    .update(bookings)
-    .set({
-      status: "cancelled",
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(bookings.id, id),
-        eq(bookings.studentId, studentId),
-        or(
-          eq(bookings.status, "pending"),
-          eq(bookings.status, "confirmed"),
-        ),
-      ),
-    );
-
-  return (
-    await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.id, id))
-      .limit(1)
-  )[0];
+  return db.transaction(async (tx) => {
+    const current = (await tx.select().from(bookings).where(and(eq(bookings.id, id), eq(bookings.studentId, studentId))).for("update").limit(1))[0];
+    if (!current || !["pending", "confirmed"].includes(current.status)) return undefined;
+    await tx.update(bookings).set({ status: "cancelled", updatedAt: new Date() }).where(and(eq(bookings.id, id), eq(bookings.studentId, studentId), eq(bookings.status, current.status)));
+    return (await tx.select().from(bookings).where(and(eq(bookings.id, id), eq(bookings.studentId, studentId))).limit(1))[0];
+  });
 }
 
 export async function updateTeacherBookingStatus(
@@ -553,44 +548,11 @@ export async function updateTeacherBookingStatus(
     confirmed: ["completed", "cancelled"],
   };
 
-  const current = (
-    await db
-      .select()
-      .from(bookings)
-      .where(
-        and(
-          eq(bookings.id, id),
-          eq(bookings.teacherId, teacherId),
-        ),
-      )
-      .limit(1)
-  )[0];
-
-  if (!current) return undefined;
-
-  if (!allowed[current.status]?.includes(status)) {
-    throw new Error("انتقال حالة الحجز غير مسموح");
-  }
-
-  await db
-    .update(bookings)
-    .set({
-      status,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(bookings.id, id),
-        eq(bookings.teacherId, teacherId),
-      ),
-    );
-
-  return (
-    await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.id, id))
-      .limit(1)
-  )[0];
+  return db.transaction(async (tx) => {
+    const current = (await tx.select().from(bookings).where(and(eq(bookings.id, id), eq(bookings.teacherId, teacherId))).for("update").limit(1))[0];
+    if (!current) return undefined;
+    if (!allowed[current.status]?.includes(status)) throw new Error("انتقال حالة الحجز غير مسموح");
+    await tx.update(bookings).set({ status, updatedAt: new Date() }).where(and(eq(bookings.id, id), eq(bookings.teacherId, teacherId), eq(bookings.status, current.status)));
+    return (await tx.select().from(bookings).where(and(eq(bookings.id, id), eq(bookings.teacherId, teacherId))).limit(1))[0];
+  });
 }
-

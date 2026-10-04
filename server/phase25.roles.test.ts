@@ -5,6 +5,7 @@ import type { TrpcContext } from "./_core/context";
 const auditSpy = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("./db", () => ({
   getStudentProfile: vi.fn(async () => undefined),
+  activateParentUser: vi.fn(async (id: number) => ({ id, role: "parent" })),
   getUserById: vi.fn(async (id: number) => ({ id, role: id === 99 ? "super_admin" : "student", accountStatus: "active" })),
   countSuperAdmins: vi.fn(async () => 2),
   updateUserAccessWithAudit: vi.fn(async (id: number, data: Record<string, string | undefined>, actorUserId: number) => { if (data.role) auditSpy({ action: "role.change", actorUserId, targetUserId: id }); if (data.accountStatus) auditSpy({ action: "account_status.change", actorUserId, targetUserId: id }); return { before: { id, role: "student", accountStatus: "active" }, after: { id, ...data } }; }),
@@ -37,5 +38,12 @@ describe("Phase 2.5 role and identity procedures", () => {
   it("blocks suspended users and allows active users through protected procedures", async () => {
     await expect(appRouter.createCaller(context({ id: 1, role: "student", accountStatus: "suspended" })).student.profile.get()).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(appRouter.createCaller(context({ id: 1, role: "student", accountStatus: "active" })).student.profile.get()).resolves.toBeUndefined();
+  });
+
+  it("allows active ordinary accounts to self-select parent, but not staff or admins", async () => {
+    await expect(appRouter.createCaller(context({ id: 7, role: "user", accountStatus: "active" })).auth.activateParent()).resolves.toMatchObject({ role: "parent" });
+    for (const role of ["student", "teacher", "admin", "super_admin", "support"]) {
+      await expect(appRouter.createCaller(context({ id: 8, role, accountStatus: "active" })).auth.activateParent()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
   });
 });

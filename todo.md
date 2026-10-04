@@ -1,30 +1,28 @@
-# المُعلّم Website — Build Tracker
+# مُعلّم — Production Audit Tracker
 
-## Completed
-- [x] Arabic-first RTL storefront branded **مُعلّم**, Egypt-first copy, responsive public navigation, and hosted original tutor artwork.
-- [x] Landing-page search for subject, stage, country, lesson format, budget, and availability; filters carry through to teacher discovery.
-- [x] Teacher directory with country-aware filtering/currencies, profile routes, supported sort choices, and accurate verified/review/demo labels.
-- [x] Existing booking, teacher registration, auth, student, parent, teacher, and admin routes retained. Demonstration tutors cannot produce real bookings.
-- [x] Learning-preferences onboarding retained with server persistence and visibly labeled demo recommendations.
-- [x] Public teacher API exposes country/profile fields while excluding contact and moderation data.
-- [x] TiDB-compatible JSON persistence and reviewed Drizzle migration; hosted preview migration completed with expected tables present.
-- [x] Egypt-first wording/palette extended to role dashboards; public home stays visible for signed-in admins; link text contrast corrected.
-- [x] Final WebDev checkpoint saved as `9f5765af`.
+## Completed and verified
+- [x] Audited source routes, tRPC authorization, roles, bookings, schema, OAuth, exports, metadata and configured integration status.
+- [x] Fixed lazy-route initialization crash; verified homepage, teacher directory and parent signup render in preview.
+- [x] Added DB-backed JSON health endpoint, route manifest, robots/sitemap, favicon and private-route noindex header.
+- [x] Added same-origin OAuth redirect validation, 30-day new sessions and SameSite=Lax cookies.
+- [x] Added atomic last-super-admin protection; fixed reviewed dashboard dead links; added parent onboarding entry.
+- [x] Improved booking validation/timezone and response privacy; hardened printable PDF and spreadsheet CSV exports.
+- [x] Added tests for auth redirects/session TTL/PDF escaping, booking overlap boundaries and CSV formula safety.
+- [x] Moved pnpm override settings into supported workspace config; frozen-lockfile install passes.
+- [x] Added `docs/PRODUCTION-AUDIT.md` and `docs/INTEGRATION-STATUS.md`.
+- [x] `pnpm check` passed; `pnpm test` passed (50 tests/13 files); `pnpm build` passed; `git diff --check` passed.
+- [x] Local production and WebDev preview route smoke tests passed with DB health `ok`; preview screenshots and browser console checked.
 
-## Verification
-- [x] `pnpm check` passed.
-- [x] `pnpm test`: **43 passed** across 10 files.
-- [x] `pnpm build` completed; Vite emitted only a non-blocking advisory that the main JS bundle exceeds 500 kB.
-- [x] Desktop screenshots verified the home page and URL-filtered teacher results.
-- [x] Mobile screenshot verified the Arabic homepage and hero without horizontal overflow.
-- [x] `git diff --check` passed.
-- [x] Commit and push the verified changes to the selected GitHub repository.
+## Open release and commercial blockers
+- [ ] Published custom domain is stale: health, manifest, robots and sitemap paths return SPA HTML. No public release was performed.
+- [ ] Payments/idempotency, wallet ledger, refunds and payouts are **NOT IMPLEMENTED**; require provider/business choice and sandbox credentials.
+- [ ] Zoom/Meet, WhatsApp, SMS/email production providers are **NOT CONFIGURED / NOT IMPLEMENTED**.
+- [ ] Full lesson lifecycle, no-show/refund policy, quizzes/homework/grades/progress/notifications/support are not implemented.
+- [ ] Granular admin roles and country/curriculum catalogs require business decisions.
+- [ ] Booking overlap is unit-tested, but a true concurrent database race test was not run against an isolated test DB.
+- [ ] Production OAuth and role-specific journeys require post-release verification.
 
-## Launch follow-ups
-- [ ] Replace the explicitly marked demo tutors, dashboard metrics, and example rows with real approved marketplace records.
-- [ ] Connect/test payment, payout, support, and notification providers; do not collect payment information in this preview.
-- [ ] Add business-approved Terms of Service and Privacy Policy content before commercial launch.
-- [ ] Reviews/matching scores are not supported by the current live public API; those claims are omitted from the public UI.
-- [ ] Configure OAuth for the production domain and test each role.
-- [ ] Populate approved teachers, schedules/time zones, country/currency details, and notifications before launch.
-- [ ] This is a development preview, not a separately published production deployment.
+## Before commercial launch
+1. Explicitly authorize release to the public custom domain and publish via the supported WebDev UI.
+2. Retest published `/`, `/api/health`, `/manus-routes.json`, `/robots.txt`, `/sitemap.xml` and the main user flows.
+3. Complete the chosen finance provider, ledger/refund/payout implementation, and sandbox tests before enabling payments.

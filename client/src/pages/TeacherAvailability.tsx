@@ -103,7 +103,7 @@ export default function TeacherAvailability() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
           <div>
             <p className="text-sm font-bold text-[#ff7a00]">
-              نُخبة
+              مُعلّم
             </p>
             <h1 className="mt-1 text-2xl font-bold">
               مواعيد التوافر

@@ -9,91 +9,13 @@ import {
   Filter,
   Search,
   ShieldCheck,
-  Star,
   X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { currencyForCountry, marketplaceCountryKey } from "../../../shared/marketplace";
 
-export const demoTeachers = [
-  {
-    id: "sara",
-    name: "سارة محمود",
-    country: "مصر",
-    subject: "رياضيات",
-    stage: "ثانوي",
-    grade: "الثاني الثانوي",
-    curriculum: "المنهج المصري",
-    rating: 4.9,
-    price: 320,
-    experience: 8,
-    availability: "المساء",
-    color: "#dbe9e4",
-    initials: "س",
-    bio: "أساعد طلاب المرحلة الثانوية على فهم الرياضيات بثقة، من خلال أمثلة عملية وخطة مراجعة واضحة.",
-    qualifications: "ماجستير تعليم الرياضيات",
-    style: "تفاعلي قائم على حل المسائل",
-    match: 94,
-  },
-  {
-    id: "omar",
-    name: "عمر عبدالسلام",
-    country: "مصر",
-    subject: "فيزياء",
-    stage: "ثانوي",
-    grade: "الثالث الثانوي",
-    curriculum: "المنهج المصري",
-    rating: 4.8,
-    price: 280,
-    experience: 6,
-    availability: "بعد الظهر",
-    color: "#e9e0d0",
-    initials: "ع",
-    bio: "فيزياء أبسط. أركز على بناء الفهم أولًا ثم تحويله إلى مهارة حل مسائل.",
-    qualifications: "بكالوريوس فيزياء",
-    style: "عملي ومبني على الأمثلة",
-    match: 91,
-  },
-  {
-    id: "noura",
-    name: "نورهان علي",
-    country: "مصر",
-    subject: "لغة إنجليزية",
-    stage: "إعدادي",
-    grade: "الأول الإعدادي",
-    curriculum: "المنهج المصري",
-    rating: 4.9,
-    price: 250,
-    experience: 10,
-    availability: "نهاية الأسبوع",
-    color: "#e3dff0",
-    initials: "ن",
-    bio: "منهج تفاعلي يربط اللغة باهتمامات الطالب اليومية ويقيس تقدمه أسبوعيًا.",
-    qualifications: "شهادة TESOL",
-    style: "محادثة وتطبيق",
-    match: 89,
-  },
-  {
-    id: "khaled",
-    name: "خالد حسن",
-    country: "مصر",
-    subject: "كيمياء",
-    stage: "ثانوي",
-    grade: "الثاني الثانوي",
-    curriculum: "المنهج المصري",
-    rating: 4.7,
-    price: 270,
-    experience: 5,
-    availability: "المساء",
-    color: "#dce8ee",
-    initials: "خ",
-    bio: "أبني خطة تعلم مرنة للطلاب الذين يريدون رفع مستواهم قبل الاختبارات.",
-    qualifications: "بكالوريوس كيمياء",
-    style: "منظم وموجه للاختبارات",
-    match: 86,
-  },
-];
+type MarketplaceTeacher = { id: string; name: string; country: string; subject: string; stage: string; grade: string; price: number; experience: number; availability: string; color: string; initials: string; bio: string; qualifications: string; style: string };
 
 function Header() {
   return (
@@ -141,9 +63,7 @@ export default function Marketplace() {
   const [availabilityFilter, setAvailabilityFilter] = useState(paramsFromSearch.get("availability") ?? "");
   const [maxPrice, setMaxPrice] = useState(Number(paramsFromSearch.get("price")) || 1000);
   const [sortBy, setSortBy] = useState("experience");
-  const [bookingTeacher, setBookingTeacher] = useState<
-    typeof demoTeachers[number] | null
-  >(null);
+  const [bookingTeacher, setBookingTeacher] = useState<MarketplaceTeacher | null>(null);
 
   const teachers = (live.data ?? []).map((t) => ({
     id: String(t.id),
@@ -152,8 +72,6 @@ export default function Marketplace() {
     subject: t.subjects[0] ?? "تدريس عام",
     stage: t.educationStages[0] ?? "مراحل متعددة",
     grade: t.grades[0] ?? "صفوف متعددة",
-    curriculum: "مُعلّم",
-    rating: 0,
     price: t.hourlyRate ?? 0,
     experience: t.yearsOfExperience,
     availability: t.availability[0] ?? "حسب التوفر",
@@ -162,17 +80,14 @@ export default function Marketplace() {
     bio: t.bio ?? "ملف معلم معتمد في مُعلّم.",
     qualifications: t.qualification ?? "",
     style: t.teachingFormat ?? "",
-    match: 100,
   }));
-
-  const allTeachers =
-    teachers.length > 0 ? teachers : demoTeachers;
+  const allTeachers = teachers;
 
   const selected = params?.id
     ? allTeachers.find((t) => t.id === params.id)
     : null;
   const favoriteIds = new Set((favorites.data ?? []).filter((item) => item.favoriteType === "teacher").map((item) => item.targetId));
-  const toggleTeacherFavorite = (teacher: typeof demoTeachers[number]) => {
+  const toggleTeacherFavorite = (teacher: MarketplaceTeacher) => {
     if (user?.role !== "student" || !/^\d+$/.test(teacher.id)) return;
     if (favoriteIds.has(teacher.id)) removeFavorite.mutate({ favoriteType: "teacher", targetId: teacher.id });
     else addFavorite.mutate({ favoriteType: "teacher", targetId: teacher.id, title: teacher.name });
@@ -197,14 +112,13 @@ export default function Marketplace() {
 
   const sorted = useMemo(() => {
     const result = [...filtered];
-    if (sortBy === "rating") result.sort((a, b) => b.rating - a.rating);
-    else if (sortBy === "price") result.sort((a, b) => a.price - b.price);
+    if (sortBy === "price") result.sort((a, b) => a.price - b.price);
     else result.sort((a, b) => b.experience - a.experience);
     return result;
   }, [filtered, sortBy]);
 
   const startBooking = (
-    teacher: typeof demoTeachers[number],
+    teacher: MarketplaceTeacher,
   ) => {
     setBookingTeacher(teacher);
   };
@@ -244,14 +158,11 @@ export default function Marketplace() {
                 {selected.subject} · {selected.stage}
               </p>
 
-              <div className="mt-8 flex items-center gap-2">
-                {selected.id.match(/^\d+$/) && selected.rating > 0 ? <Star className="h-5 w-5 fill-[#e8a64a] text-[#e8a64a]" /> : <BadgeCheck className="h-5 w-5 text-[#e8a64a]" />}
-                <b>{selected.id.match(/^\d+$/) ? (selected.rating ? selected.rating : "لا توجد مراجعات بعد") : "بيانات نموذجية"}</b>
-              </div>
+              <div className="mt-8 flex items-center gap-2"><BadgeCheck className="h-5 w-5 text-[#e8a64a]" /><b>ملف معتمد</b></div>
 
               <div className="mt-8 rounded-2xl bg-white/8 p-4 text-sm leading-7 text-white/65">
                 <ShieldCheck className="mb-2 h-5 w-5 text-[#e8a64a]" />
-                {selected.id.match(/^\d+$/) ? "ملف معلم معتمد في السوق" : "هذا ملف توضيحي — لا يمثل معلمًا حقيقيًا"}
+                ملف معلم معتمد في السوق
               </div>
             </aside>
 
@@ -274,7 +185,7 @@ export default function Marketplace() {
                     للساعة
                   </span>
                 </div>
-                <button type="button" onClick={() => selected && toggleTeacherFavorite(selected)} disabled={user?.role !== "student" || !selected || !/^\d+$/.test(selected.id)} className={`rounded-full border px-4 py-3 text-xs font-bold ${selected && favoriteIds.has(selected.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#182431]/12"}`}>{selected && favoriteIds.has(selected.id) ? "إزالة من المفضلة" : "حفظ في المفضلة"}</button>
+                <button type="button" onClick={() => toggleTeacherFavorite(selected)} disabled={user?.role !== "student"} className={`rounded-full border px-4 py-3 text-xs font-bold ${favoriteIds.has(selected.id) ? "border-[#e8a64a] bg-[#fff3df] text-[#8a5b27]" : "border-[#182431]/12"}`}>{favoriteIds.has(selected.id) ? "إزالة من المفضلة" : "حفظ في المفضلة"}</button>
               </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -320,6 +231,14 @@ export default function Marketplace() {
     );
   }
 
+  if (params?.id && live.isLoading) {
+    return <div role="status" dir="rtl" className="grid min-h-screen place-items-center bg-[#fbf8f4] text-[#182431]">جارٍ تحميل ملف المعلم…</div>;
+  }
+
+  if (params?.id && !live.isLoading) {
+    return <div dir="rtl" className="min-h-screen bg-[#fbf8f4] p-8 text-[#182431]"><Header /><main className="mx-auto max-w-3xl py-16 text-center"><h1 className="text-2xl font-bold">ملف المعلم غير متاح</h1><p className="mt-3 text-sm text-[#182431]/60">قد يكون الملف غير منشور أو لم يعد موجودًا.</p><Link className="mt-6 inline-block rounded-full bg-[#182431] px-5 py-3 font-bold text-white" href="/teachers">العودة إلى المعلمين</Link></main></div>;
+  }
+
   const subjects = Array.from(
     new Set(allTeachers.map((t) => t.subject)),
   );
@@ -343,7 +262,7 @@ export default function Marketplace() {
             </h1>
 
             <p className="mt-3 text-[#182431]/55">
-              عروض توضيحية في هذه النسخة؛ بيانات المعلمين والأسعار والملفات التجريبية ليست عروضًا فعلية.
+              ملفات المعلمين المعتمدة فقط — المعلومات والأسعار مأخوذة من ملفاتهم المنشورة.
             </p>
           </div>
 
@@ -437,8 +356,7 @@ export default function Marketplace() {
                 <span>ترتيب حسب</span>
                 <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-lg bg-white px-2 py-1.5 text-xs font-semibold text-[#182431] outline-none">
                   <option value="experience">الخبرة الأعلى</option>
-                  <option value="rating">التقييم الأعلى</option>
-                  <option value="price">السعر الأقل</option>
+                   <option value="price">السعر الأقل</option>
                 </select>
               </label>
             </div>
@@ -467,13 +385,11 @@ export default function Marketplace() {
                         {t.subject} · {t.stage}
                       </p>
 
-                      <div className="mt-2 flex items-center gap-1 text-xs">
-                        {!/^\d+$/.test(t.id) ? <span className="rounded-full bg-[#fff0e2] px-2 py-1 text-[10px] font-bold text-[#b85a08]">ملف تجريبي</span> : t.rating > 0 ? <><Star className="h-3.5 w-3.5 fill-[#e8a64a] text-[#e8a64a]" /><b>{t.rating}</b></> : <span className="text-[#182431]/50">لا توجد مراجعات بعد</span>}
-                      </div>
+                      <div className="mt-2 flex items-center gap-1 text-xs"><span className="text-[#182431]/50">{t.experience} سنوات خبرة</span></div>
                     </div>
 
                     <span className="mr-auto rounded-full bg-[#fff0e2] px-2.5 py-1 text-[10px] font-bold text-[#ff7a00]">
-                      {/^\d+$/.test(t.id) ? "ملف موثّق" : "بيانات عرض"}
+                      ملف موثّق
                     </span>
                   </div>
 
@@ -511,11 +427,13 @@ export default function Marketplace() {
               ))}
             </div>
 
-            {filtered.length === 0 && (
+            {live.isLoading && <div role="status" className="rounded-3xl bg-white p-12 text-center">جارٍ تحميل ملفات المعلمين…</div>}
+            {live.isError && <div role="alert" className="rounded-3xl bg-white p-12 text-center text-red-700">تعذر تحميل ملفات المعلمين. <button type="button" className="font-bold underline" onClick={() => void live.refetch()}>إعادة المحاولة</button></div>}
+            {!live.isLoading && !live.isError && filtered.length === 0 && (
               <div className="rounded-3xl bg-white p-12 text-center">
                 <X className="mx-auto text-[#ff7a00]" />
                 <p className="mt-3 font-bold">
-                  لا توجد نتائج بهذه التصفية
+                  {allTeachers.length ? "لا توجد نتائج بهذه التصفية" : "لا توجد ملفات معلمين منشورة بعد"}
                 </p>
               </div>
             )}
@@ -556,7 +474,7 @@ function BookingModal({
   close,
   navigate,
 }: {
-  teacher: typeof demoTeachers[number];
+  teacher: MarketplaceTeacher;
   close: () => void;
   navigate: (path: string) => void;
 }) {
@@ -565,7 +483,7 @@ function BookingModal({
     Number.isInteger(teacherId) && teacherId > 0;
 
   const [date, setDate] = useState(
-    new Date().toISOString().slice(0, 10),
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()),
   );
   const [selectedSlot, setSelectedSlot] = useState("");
   const [type, setType] = useState("فردي");
@@ -697,7 +615,6 @@ function BookingModal({
         teacherId,
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
-        timezone: slot.timezone,
         notes: `نوع الدرس: ${type}`,
       });
     } catch (err) {
@@ -720,7 +637,7 @@ function BookingModal({
           <div className="flex items-start justify-between">
             <div>
               <span className="text-xs font-bold text-[#ff7a00]">
-                حجز حقيقي
+                تم إرسال الطلب
               </span>
 
               <h2 className="mt-2 text-2xl font-bold">

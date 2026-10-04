@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   auditLogs,
@@ -34,7 +34,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
   if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
   if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
-  else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
+  else if (user.openId === ENV.ownerOpenId) { values.role = "super_admin"; updateSet.role = "super_admin"; }
   values.lastSignedIn ??= new Date();
   if (!Object.keys(updateSet).length) updateSet.lastSignedIn = new Date();
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
@@ -65,10 +65,32 @@ export async function listStudentsForAdmin() {
     .orderBy(desc(users.createdAt))
     .limit(500);
 }
+export async function getAdminOverview() {
+  const db = await getDb(); if (!db) return { studentCount: 0, teacherCount: 0 };
+  const [students, teachers] = await Promise.all([
+    db.select({ value: count() }).from(users).where(eq(users.role, "student")),
+    db.select({ value: count() }).from(teacherProfiles),
+  ]);
+  return { studentCount: Number(students[0]?.value ?? 0), teacherCount: Number(teachers[0]?.value ?? 0) };
+}
 export async function getParentProfile(userId: number) {
   const db = await getDb(); if (!db) return undefined;
   const result = await db.select().from(parentProfiles).where(eq(parentProfiles.userId, userId)).limit(1);
   return result[0];
+}
+export async function activateParentUser(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database unavailable");
+  return db.transaction(async tx => {
+    const rows = await tx.select().from(users).where(eq(users.id, userId)).for("update").limit(1);
+    const user = rows[0];
+    if (!user || !["user", "parent"].includes(user.role) || user.accountStatus !== "active") throw new Error("لا يمكن تفعيل دور ولي الأمر لهذا الحساب");
+    if (user.role === "user") {
+      await tx.update(users).set({ role: "parent", updatedAt: new Date() }).where(and(eq(users.id, userId), eq(users.role, "user")));
+      await tx.insert(auditLogs).values({ actorUserId: userId, targetUserId: userId, action: "role.self_activate_parent", entityType: "user", entityId: userId, oldValue: { role: "user" }, newValue: { role: "parent" }, reason: "Self-selected parent onboarding" });
+    }
+    await tx.insert(parentProfiles).values({ userId }).onDuplicateKeyUpdate({ set: { updatedAt: new Date() } });
+    return { ...user, role: "parent" as const };
+  });
 }
 export async function upsertStudentProfile(userId: number, data: Omit<Partial<typeof studentProfiles.$inferInsert>, "userId">) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
@@ -147,8 +169,12 @@ export type AccessChange = { role?: "user" | "student" | "parent" | "teacher" | 
 export async function updateUserAccessWithAudit(targetUserId: number, data: AccessChange, actorUserId: number, reason?: string) {
   const db = await getDb(); if (!db) throw new Error("Database unavailable");
   return db.transaction(async tx => {
-    const result = await tx.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+    const result = await tx.select().from(users).where(eq(users.id, targetUserId)).for("update").limit(1);
     const before = result[0]; if (!before) return undefined;
+    if (before.role === "super_admin" && ((data.role !== undefined && data.role !== "super_admin") || (data.accountStatus !== undefined && data.accountStatus !== "active"))) {
+      const activeSuperAdmins = await tx.select({ id: users.id }).from(users).where(eq(users.role, "super_admin")).for("update");
+      if (activeSuperAdmins.length <= 1) throw new Error("لا يمكن إزالة آخر مدير عام للنظام");
+    }
     await tx.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, targetUserId));
     if (data.role !== undefined && data.role !== before.role) await tx.insert(auditLogs).values({ actorUserId, targetUserId, action: "role.change", entityType: "user", entityId: targetUserId, oldValue: { role: before.role }, newValue: { role: data.role }, reason });
     if (data.accountStatus !== undefined && data.accountStatus !== before.accountStatus) await tx.insert(auditLogs).values({ actorUserId, targetUserId, action: "account_status.change", entityType: "user", entityId: targetUserId, oldValue: { accountStatus: before.accountStatus }, newValue: { accountStatus: data.accountStatus }, reason });
