@@ -6,7 +6,7 @@
 
 **The audited source passes typecheck, tests, build and local/preview smoke checks. The published custom domain fails deployment verification and must not be treated as running this audited release.** This remains an early marketplace prototype, **not a commercial EdTech service ready to collect money**. No payment, wallet/ledger, payout, refund, live-class, messaging, support-ticket or full learning-management system is implemented.
 
-The preview briefly showed a blank screen after a route-splitting change. Browser-console evidence identified `Cannot access 'lazy' before initialization` in `App.tsx`; the `NotFound` lazy component was moved below its import. The preview was re-captured afterward and rendered the Arabic homepage, teacher directory and parent signup page without a new console error.
+The preview briefly showed a blank screen after a route-splitting change. Browser-console evidence identified `Cannot access 'lazy' before initialization` in `App.tsx`; the `NotFound` lazy component was moved below its import. The preview was re-captured afterward and rendered the Arabic homepage, teacher directory and parent signup page without a new console error. The separate teacher-registration crash (`Rendered more hooks than during the previous render`, React error #310) was fixed by placing the loading return after all hooks, with a TypeScript-AST regression test enforcing unconditional hook order. Current checks pass. **Authenticated manual confirmation on the published site remains blocked:** clicking `انضم كمعلم` redirects to Manus OAuth before registration renders; the preview’s direct protected-route visit shows the role guard. No authenticated browser session was available in this run.
 
 ### Critical
 
@@ -24,6 +24,7 @@ The preview briefly showed a blank screen after a route-splitting change. Browse
 | Export flows: broken PDF popup and spreadsheet formula risk | `noopener` can return `null` to a popup that the PDF flow must write to; untrusted CSV cells could begin with spreadsheet formulas. | **FIXED IN SOURCE.** Open popup from user gesture, immediately clear `opener`; HTML-escape report values; neutralize formula-leading CSV text. | New HTML escaping/CSV export tests pass. Authenticated manual print/browser export not run. |
 | Dashboard dead ends and inert notification control | Some visible controls had no destination/system behind them. | **FIXED ON REVIEWED SURFACES.** Replaced role-dashboard navigation with real links, removed inert bell, removed placeholder admin links from visible nav, and labeled unavailable reports/payment/live classes honestly. | Typecheck, tests/build; authenticated role-by-role browser walkthrough not run. |
 | Lazy-route initialization caused a blank preview | The `NotFound` lazy component was initialized before the `React.lazy` import in source order. | **FIXED IN SOURCE/PREVIEW.** Moved the lazy declaration below imports. | Captured rendered homepage/search/parent signup after fix; no new browser-console error. |
+| Teacher registration crashed on query loading transition | `TeacherRegister` returned while `app.isLoading` before reaching `useEffect`, then called an additional hook after query resolution, violating React's hook-order invariant (#310). | **FIXED IN SOURCE/PREVIEW.** Moved the loading return after the query/mutation/state/effect hooks; added an AST regression test for unconditional hook order and return placement. | Regression test passes; all 51 tests, TypeScript check and production build pass. Anonymous live CTA click redirected to OAuth before the protected component could be manually checked. |
 
 ### Medium
 
@@ -48,7 +49,8 @@ The preview briefly showed a blank screen after a route-splitting change. Browse
 | Check | Result |
 |---|---|
 | `pnpm check` | **PASS** |
-| `pnpm test` | **PASS — 50 tests, 13 files** |
+| `pnpm test` | **PASS — 51 tests, 14 files** |
+| TeacherRegister hook-order regression | **PASS** — AST asserts all six hooks are unconditional and precede the loading/JSX returns |
 | `pnpm build` | **PASS** — route chunks split; no >500 kB warning |
 | `pnpm install --frozen-lockfile --ignore-scripts` | **PASS** |
 | `git diff --check` | **PASS** |
@@ -62,7 +64,7 @@ The preview briefly showed a blank screen after a route-splitting change. Browse
 
 | Capability | Result |
 |---|---|
-| Security tests (implemented surfaces) | **PASS — 50 total tests; not a penetration test** |
+| Security and regression tests (implemented surfaces) | **PASS — 51 total tests; not a penetration test** |
 | Parent isolation | **PASS for covered API cases**; linked child only; tests deny unlinked child access |
 | Admin RBAC | **PASS for covered procedures; granular staff scopes incomplete** |
 | Booking concurrency | **NOT FULLY TESTED**; pure interval tests and locking code, no concurrent database race harness |
